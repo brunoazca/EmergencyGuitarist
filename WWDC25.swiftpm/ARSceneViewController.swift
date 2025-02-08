@@ -24,6 +24,7 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
     
     let soundPlayer = SoundPlayer()
     var currentChord: SoundPlayer.Chord? = nil
+    var canPlay = true
     
     let guitarNode = SCNScene(named: "guitar.scn")!.rootNode.childNodes[0]
    
@@ -70,7 +71,7 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         arView.scene.rootNode.addChildNode(debugNode) // Adiciona na cena
 
         arView.scene.rootNode.addChildNode(guitarNode)
-        
+        setCurrentChord(.A)
         guitarNode.addChildNode(indexSphere)
         guitarNode.addChildNode(middleSphere)
         guitarNode.addChildNode(ringSphere)
@@ -89,7 +90,6 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        setCurrentChord(.A)
     }
     
     func setCurrentChord(_ chord: SoundPlayer.Chord){
@@ -120,7 +120,7 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
             z: ringPosition.worldPosition.z
         )
     }
-    
+
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
         let pixelBuffer = frame.capturedImage
         processHandPose(pixelBuffer: pixelBuffer, frame)
@@ -208,20 +208,28 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
     func detectRightHand(observation: VNHumanHandPoseObservation){
         do {
             let wristPoint = try observation.recognizedPoint(.wrist)
-            if wristPoint.confidence < 0.5 { // Confiança mínima
+            if wristPoint.confidence > 0.5 { // Confiança mínima
                 
                 // Converta o ponto normalizado do Vision para coordenadas 2D
                 let wristY = wristPoint.y // Apenas o valor Y para detectar movimentos verticais
-                
+                print(wristY)
                 if let previousY = previousHandY {
                     // Calcule a diferença de Y entre frames
                     let movementDelta = wristY - previousY
                     
-                    if movementDelta < -0.05 { // Threshold para "cima para baixo"
+                    if movementDelta < -0.1 { // Threshold para "cima para baixo"
                         print("Hand moved DOWN")
                         if let chord = currentChord {
                             if (indexSphere.isTouched && middleSphere.isTouched && ringSphere.isTouched){
-                                soundPlayer.playChord(chord)
+                                if canPlay {
+                                    soundPlayer.playChord(chord)
+                                    canPlay = false  // Bloqueia a execução
+
+                                    // Define um cooldown de 0.5 segundos antes de permitir outra execução
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                        self.canPlay = true
+                                    }
+                                }
                             } else {
                                 print("Dedos fora do arranjo")
                             }
@@ -261,25 +269,15 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
                let ringPip = recognizedPoints[.ringPIP],
                let ringMcp = recognizedPoints[.ringMCP] {
                 
-//                let indexTipPosition = CGPoint(x: 1.55 * indexTip.location.x - 0.775, y: 1.2 * indexTip.location.y - 0.6)
-//                let middleTipPosition = CGPoint(x: 1.55 * middleTip.location.x - 0.775, y: 1.2 * indexTip.location.y - 0.6)
-//                let ringTipPosition = CGPoint(x: 1.55 * ringTip.location.x - 0.775, y: 1.2 * indexTip.location.y - 0.6)
-                let xFactor = 2*screenWidth/1000
-                let xCorrection = xFactor/2
-                let yFactor = 2*screenHeight/1000
-                let yCorrection = yFactor/2
-
-                let indexTipPosition = CGPoint(x: xFactor * indexTip.location.x - xCorrection, y: yFactor * indexTip.location.y - yCorrection)
-                let indexDipPosition = CGPoint(x: xFactor * indexDip.location.x - xCorrection, y: yFactor * indexDip.location.y - yCorrection)
-                let indexPipPosition = CGPoint(x: xFactor * indexPip.location.x - xCorrection, y: yFactor * indexPip.location.y - yCorrection)
-
-                let middleTipPosition = CGPoint(x: xFactor * middleTip.location.x - xCorrection, y: yFactor * middleTip.location.y - yCorrection)
-                let middleDipPosition = CGPoint(x: xFactor * middleDip.location.x - xCorrection, y: yFactor * middleDip.location.y - yCorrection)
-                let middlePipPosition = CGPoint(x: xFactor * middlePip.location.x - xCorrection, y: yFactor * middlePip.location.y - yCorrection)
-
-                let ringTipPosition = CGPoint(x: xFactor * ringTip.location.x - xCorrection, y: yFactor * ringTip.location.y - yCorrection)
-                let ringDipPosition = CGPoint(x: xFactor * ringDip.location.x - xCorrection, y: yFactor * ringDip.location.y - yCorrection)
-                let ringPipPosition = CGPoint(x: xFactor * ringPip.location.x - xCorrection, y: yFactor * ringPip.location.y - yCorrection)
+                let indexTipPosition = calculatePositionForShader(fingerPos: indexTip)
+                let indexDipPosition = calculatePositionForShader(fingerPos: indexDip)
+                let indexPipPosition = calculatePositionForShader(fingerPos: indexPip)
+                let middleTipPosition = calculatePositionForShader(fingerPos: middleTip)
+                let middleDipPosition = calculatePositionForShader(fingerPos: middleDip)
+                let middlePipPosition = calculatePositionForShader(fingerPos: middlePip)
+                let ringTipPosition = calculatePositionForShader(fingerPos: ringTip)
+                let ringDipPosition = calculatePositionForShader(fingerPos: ringDip)
+                let ringPipPosition = calculatePositionForShader(fingerPos: ringPip)
 
                 if let material = guitarNode.childNodes[0].geometry?.firstMaterial {
                     material.setValue(NSValue(cgPoint: indexTipPosition), forKey: "indexTip")
@@ -304,6 +302,16 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         } catch {
             print("Erro ao processar os pontos da mão esquerda (dedos das casas): \(error)")
         }
+    }
+    
+    func calculatePositionForShader(fingerPos: VNRecognizedPoint) -> CGPoint{
+//        let xFactor = 2*screenWidth/1000
+//        let xCorrection = xFactor/2
+//        let yFactor = 2*screenHeight/1000
+//        let yCorrection = yFactor/2
+//        return CGPoint(x: xFactor * fingerPos.location.x - xCorrection, y: yFactor * fingerPos.location.y - yCorrection)
+//        Gambiarra que funciona:
+        return CGPoint(x: 1.55 * fingerPos.location.x - 0.775, y: 1.2 * fingerPos.location.y - 0.6)
     }
     
     func processFingerPosition(finger: Finger, fingerLocation: CGPoint, frame: ARFrame){
@@ -429,7 +437,9 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         material.setValue(NSValue(cgPoint: CGPointZero), forKey: "ringPip")
     }
     
-    let shader = """
+
+
+let shader = """
     #pragma arguments
     float2 indexTip;   // Posição do dedo indicador
     float2 indexDip;
@@ -444,9 +454,19 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
     
     #pragma body
     
+    float2 indexMid = (indexTip + indexDip) * 0.5;
+    float2 indexDownMid = (indexDip + indexPip) * 0.5;
+    float2 middleMid = (middleTip + middleDip) * 0.5;
+    float2 middleDownMid = (middleDip + middlePip) * 0.5;
+    float2 ringMid = (ringTip + ringDip) * 0.5;
+    float2 ringDownMid = (ringDip + ringPip) * 0.5;
+
+    
     // Apenas os componentes x e y da posição ajustada
     float2 fragPos = _surface.position.xy/_surface.position.z;
     fragPos = -fragPos;
+    
+    
 
     // Distância entre o fragmento e cada dedo
     float distToIndexTip = distance(fragPos, indexTip);
@@ -458,21 +478,21 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
     float distToRingTip = distance(fragPos, ringTip);
     float distToRingDip = distance(fragPos, ringDip);
     float distToRingPip = distance(fragPos, ringPip);
+    float distToIndexMid = distance(fragPos, indexMid);
+    float distToMiddleMid = distance(fragPos, middleMid);
+    float distToRingMid = distance(fragPos, ringMid);
+    float distToIndexDownMid = distance(fragPos, indexDownMid);
+    float distToMiddleDownMid = distance(fragPos, middleDownMid);
+    float distToRingDownMid = distance(fragPos, ringDownMid);
     float maxD = 0.03;
     
     // Se o fragmento estiver muito próximo de qualquer dedo, torná-lo transparente
-    if (distToIndexTip < maxD || distToIndexDip < maxD || distToIndexPip < maxD || distToMiddleTip < maxD || distToMiddleDip < maxD || distToMiddlePip < maxD || distToRingTip < maxD || distToRingDip < maxD || distToRingPip < maxD) {
+    if (distToIndexTip < maxD || distToIndexDip < maxD || distToIndexPip < maxD || distToIndexMid < maxD || distToIndexDownMid < maxD || distToMiddleTip < maxD || distToMiddleDip < maxD || distToMiddlePip < maxD || distToMiddleMid < maxD || distToMiddleDownMid < maxD || distToRingTip < maxD || distToRingDip < maxD || distToRingPip < maxD || distToRingMid < maxD || distToRingDownMid < maxD) {
         _output.color.a = 0.0;  // Torna o fragmento transparente
     } else {
         _output.color.a = 1.0;  // Mantém o fragmento visível
     }
     
-    if (_surface.position.y/_surface.position.z >= -0.1 && _surface.position.y/_surface.position.z  <= -0.09){
-        _output.color.rgb = float3(1,0,0);
-    }
-    if (_surface.position.x/_surface.position.z  <= 0.1 && _surface.position.x/_surface.position.z  >= 0.09){
-        _output.color.rgb = float3(0,1,0);
-    }
     """
 }
 enum Finger {

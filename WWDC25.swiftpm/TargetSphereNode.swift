@@ -16,7 +16,7 @@ class TargetSphereNode: SCNNode {
     init(finger: Finger) {
         self.finger = finger
         super.init()
-        let sphere = SCNSphere(radius: 0.01)
+        let sphere = SCNSphere(radius: 0.015)
         self.geometry = sphere
         let material = SCNMaterial()
         material.diffuse.contents = UIColor.red
