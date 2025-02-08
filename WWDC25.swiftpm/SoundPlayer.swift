@@ -11,9 +11,9 @@ import AVFoundation
 class SoundPlayer {
     var audioPlayer: AVAudioPlayer?
     
-    enum Chord {
-        case C
-        case A
+    enum Chord: String {
+        case C = "C"
+        case A = "A"
     }
     
     // Função para tocar o som

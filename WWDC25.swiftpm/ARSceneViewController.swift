@@ -4,13 +4,12 @@
 //
 //  Created by Bruno Azambuja Carvalho on 27/01/25.
 //
+
 import UIKit
 import ARKit
 import Vision
 import SwiftUI
-import RealityKit
 import simd
-
 
 class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate{
     var arView: ARSCNView
@@ -26,11 +25,8 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
     let soundPlayer = SoundPlayer()
     var currentChord: SoundPlayer.Chord? = nil
     
-    let node = SCNScene(named: "guitar.scn")!.rootNode.childNodes[0]
-    let indexPosition = SCNScene(named: "guitar.scn")!.rootNode.childNode(withName: "index", recursively: true)!
-    let middlePosition = SCNScene(named: "guitar.scn")!.rootNode.childNode(withName: "middle", recursively: true)!
-    let ringPosition = SCNScene(named: "guitar.scn")!.rootNode.childNode(withName: "ring", recursively: true)!
-
+    let guitarNode = SCNScene(named: "guitar.scn")!.rootNode.childNodes[0]
+   
     let indexSphere = TargetSphereNode(finger: .index)
     let middleSphere = TargetSphereNode(finger: .middle)
     let ringSphere = TargetSphereNode(finger: .ring)
@@ -73,7 +69,40 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
 
         arView.scene.rootNode.addChildNode(debugNode) // Adiciona na cena
 
-        arView.scene.rootNode.addChildNode(node)
+        arView.scene.rootNode.addChildNode(guitarNode)
+        
+        guitarNode.addChildNode(indexSphere)
+        guitarNode.addChildNode(middleSphere)
+        guitarNode.addChildNode(ringSphere)
+
+        applyShader(to: guitarNode)
+        guitarNode.position = SCNVector3(0, 0, 1)
+        // Aplica a rotação no eixo Y do violão, para que ele olhe para a direção da câmera
+        let billboardConstraint = SCNBillboardConstraint()
+        billboardConstraint.freeAxes = SCNBillboardAxis.Y
+        guitarNode.constraints = [billboardConstraint]
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setCurrentChord(.A)
+    }
+    
+    func setCurrentChord(_ chord: SoundPlayer.Chord){
+        currentChord = chord
+        
+        guard let chordScheme = guitarNode.childNode(withName: chord.rawValue, recursively: true) else {
+            print("Acorde sem esquema definido na cena")
+            return
+        }
+        
+        let indexPosition = chordScheme.childNode(withName: "index", recursively: true)!
+        let middlePosition = chordScheme.childNode(withName: "middle", recursively: true)!
+        let ringPosition = chordScheme.childNode(withName: "ring", recursively: true)!
         
         indexSphere.position = SCNVector3(
             x: -indexPosition.worldPosition.x,
@@ -90,28 +119,8 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
             y: ringPosition.worldPosition.y,
             z: ringPosition.worldPosition.z
         )
-        
-        node.addChildNode(indexSphere)
-        node.addChildNode(middleSphere)
-        node.addChildNode(ringSphere)
-
-        applyShader(to: node)
-        node.position = SCNVector3(0, 0, 1)
-        // Aplica a rotação no eixo Y do violão, para que ele olhe para a direção da câmera
-        let billboardConstraint = SCNBillboardConstraint()
-        billboardConstraint.freeAxes = SCNBillboardAxis.Y
-        node.constraints = [billboardConstraint]
     }
     
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
-    }
-
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
         let pixelBuffer = frame.capturedImage
         processHandPose(pixelBuffer: pixelBuffer, frame)
@@ -163,7 +172,7 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         )
         
         // Coloca o node na nova posição ajustada
-        node.position = finalPosition
+        guitarNode.position = finalPosition
     }
     
     func processHandPose(pixelBuffer: CVPixelBuffer, _ frame: ARFrame) {
@@ -211,16 +220,19 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
                     if movementDelta < -0.05 { // Threshold para "cima para baixo"
                         print("Hand moved DOWN")
                         if let chord = currentChord {
-                            soundPlayer.playChord(chord)
+                            if (indexSphere.isTouched && middleSphere.isTouched && ringSphere.isTouched){
+                                soundPlayer.playChord(chord)
+                            } else {
+                                print("Dedos fora do arranjo")
+                            }
                         } else {
-                            print("Sem Acorde na mão")
+                            print("Sem acorde no momento")
                         }
                     } else if movementDelta > 0.05 { // Threshold para "baixo para cima"
                         print("Hand moved UP")
                     }
                 }
                 previousHandY = wristY
-                
             }
         }
         catch {
@@ -253,7 +265,7 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
                 let middleTipPosition = CGPoint(x: 1.55 * middleTip.location.x - 0.775, y: 1.2 * indexTip.location.y - 0.6)
                 let ringTipPosition = CGPoint(x: 1.55 * ringTip.location.x - 0.775, y: 1.2 * indexTip.location.y - 0.6)
                 
-                if let material = node.childNodes[0].geometry?.firstMaterial {
+                if let material = guitarNode.childNodes[0].geometry?.firstMaterial {
                     material.setValue(NSValue(cgPoint: indexTipPosition), forKey: "indexTip")
                     material.setValue(NSValue(cgPoint: middleTipPosition), forKey: "middleTip")
                     material.setValue(NSValue(cgPoint: ringTipPosition), forKey: "ringTip")
