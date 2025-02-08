@@ -247,28 +247,52 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
             // Supondo que `recognizedPoints` seja um dicionário do tipo [VNHumanHandPoseObservation.JointName: VNRecognizedPoint]
 
             if let indexTip = recognizedPoints[.indexTip],
-               let indexDIP = recognizedPoints[.indexDIP],
-               let indexPIP = recognizedPoints[.indexPIP],
-               let indexMCP = recognizedPoints[.indexMCP],
+               let indexDip = recognizedPoints[.indexDIP],
+               let indexPip = recognizedPoints[.indexPIP],
+               let indexMcp = recognizedPoints[.indexMCP],
                
                let middleTip = recognizedPoints[.middleTip],
-               let middleDIP = recognizedPoints[.middleDIP],
-               let middlePIP = recognizedPoints[.middlePIP],
-               let middleMCP = recognizedPoints[.middleMCP],
+               let middleDip = recognizedPoints[.middleDIP],
+               let middlePip = recognizedPoints[.middlePIP],
+               let middleMcp = recognizedPoints[.middleMCP],
 
                let ringTip = recognizedPoints[.ringTip],
-               let ringDIP = recognizedPoints[.ringDIP],
-               let ringPIP = recognizedPoints[.ringPIP],
-               let ringMCP = recognizedPoints[.ringMCP] {
+               let ringDip = recognizedPoints[.ringDIP],
+               let ringPip = recognizedPoints[.ringPIP],
+               let ringMcp = recognizedPoints[.ringMCP] {
                 
-                let indexTipPosition = CGPoint(x: 1.55 * indexTip.location.x - 0.775, y: 1.2 * indexTip.location.y - 0.6)
-                let middleTipPosition = CGPoint(x: 1.55 * middleTip.location.x - 0.775, y: 1.2 * indexTip.location.y - 0.6)
-                let ringTipPosition = CGPoint(x: 1.55 * ringTip.location.x - 0.775, y: 1.2 * indexTip.location.y - 0.6)
-                
+//                let indexTipPosition = CGPoint(x: 1.55 * indexTip.location.x - 0.775, y: 1.2 * indexTip.location.y - 0.6)
+//                let middleTipPosition = CGPoint(x: 1.55 * middleTip.location.x - 0.775, y: 1.2 * indexTip.location.y - 0.6)
+//                let ringTipPosition = CGPoint(x: 1.55 * ringTip.location.x - 0.775, y: 1.2 * indexTip.location.y - 0.6)
+                let xFactor = 2*screenWidth/1000
+                let xCorrection = xFactor/2
+                let yFactor = 2*screenHeight/1000
+                let yCorrection = yFactor/2
+
+                let indexTipPosition = CGPoint(x: xFactor * indexTip.location.x - xCorrection, y: yFactor * indexTip.location.y - yCorrection)
+                let indexDipPosition = CGPoint(x: xFactor * indexDip.location.x - xCorrection, y: yFactor * indexDip.location.y - yCorrection)
+                let indexPipPosition = CGPoint(x: xFactor * indexPip.location.x - xCorrection, y: yFactor * indexPip.location.y - yCorrection)
+
+                let middleTipPosition = CGPoint(x: xFactor * middleTip.location.x - xCorrection, y: yFactor * middleTip.location.y - yCorrection)
+                let middleDipPosition = CGPoint(x: xFactor * middleDip.location.x - xCorrection, y: yFactor * middleDip.location.y - yCorrection)
+                let middlePipPosition = CGPoint(x: xFactor * middlePip.location.x - xCorrection, y: yFactor * middlePip.location.y - yCorrection)
+
+                let ringTipPosition = CGPoint(x: xFactor * ringTip.location.x - xCorrection, y: yFactor * ringTip.location.y - yCorrection)
+                let ringDipPosition = CGPoint(x: xFactor * ringDip.location.x - xCorrection, y: yFactor * ringDip.location.y - yCorrection)
+                let ringPipPosition = CGPoint(x: xFactor * ringPip.location.x - xCorrection, y: yFactor * ringPip.location.y - yCorrection)
+
                 if let material = guitarNode.childNodes[0].geometry?.firstMaterial {
                     material.setValue(NSValue(cgPoint: indexTipPosition), forKey: "indexTip")
+                    material.setValue(NSValue(cgPoint: indexDipPosition), forKey: "indexDip")
+                    material.setValue(NSValue(cgPoint: indexPipPosition), forKey: "indexPip")
+
                     material.setValue(NSValue(cgPoint: middleTipPosition), forKey: "middleTip")
+                    material.setValue(NSValue(cgPoint: middleDipPosition), forKey: "middleDip")
+                    material.setValue(NSValue(cgPoint: middlePipPosition), forKey: "middlePip")
+
                     material.setValue(NSValue(cgPoint: ringTipPosition), forKey: "ringTip")
+                    material.setValue(NSValue(cgPoint: ringDipPosition), forKey: "ringDip")
+                    material.setValue(NSValue(cgPoint: ringPipPosition), forKey: "ringPip")
                 }
                 
                 processFingerPosition(finger: .index, fingerLocation: indexTip.location, frame: frame)
@@ -395,15 +419,28 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
             
         material.shaderModifiers = [.fragment: shader]
         material.setValue(NSValue(cgPoint: CGPointZero), forKey: "indexTip")
+        material.setValue(NSValue(cgPoint: CGPointZero), forKey: "indexDip")
+        material.setValue(NSValue(cgPoint: CGPointZero), forKey: "indexPip")
         material.setValue(NSValue(cgPoint: CGPointZero), forKey: "middleTip")
+        material.setValue(NSValue(cgPoint: CGPointZero), forKey: "middleDip")
+        material.setValue(NSValue(cgPoint: CGPointZero), forKey: "middlePip")
         material.setValue(NSValue(cgPoint: CGPointZero), forKey: "ringTip")
+        material.setValue(NSValue(cgPoint: CGPointZero), forKey: "ringDip")
+        material.setValue(NSValue(cgPoint: CGPointZero), forKey: "ringPip")
     }
     
     let shader = """
     #pragma arguments
     float2 indexTip;   // Posição do dedo indicador
+    float2 indexDip;
+    float2 indexPip;
     float2 middleTip;  // Posição do dedo médio
+    float2 middleDip;
+    float2 middlePip;
     float2 ringTip;    // Posição do dedo anelar
+    float2 ringDip;
+    float2 ringPip;
+
     
     #pragma body
     
@@ -412,12 +449,19 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
     fragPos = -fragPos;
 
     // Distância entre o fragmento e cada dedo
-    float distToIndex = distance(fragPos, indexTip);
-    float distToMiddle = distance(fragPos, middleTip);
-    float distToRing = distance(fragPos, ringTip);
+    float distToIndexTip = distance(fragPos, indexTip);
+    float distToIndexDip = distance(fragPos, indexDip);
+    float distToIndexPip = distance(fragPos, indexPip);
+    float distToMiddleTip = distance(fragPos, middleTip);
+    float distToMiddleDip = distance(fragPos, middleDip);
+    float distToMiddlePip = distance(fragPos, middlePip);
+    float distToRingTip = distance(fragPos, ringTip);
+    float distToRingDip = distance(fragPos, ringDip);
+    float distToRingPip = distance(fragPos, ringPip);
+    float maxD = 0.03;
     
     // Se o fragmento estiver muito próximo de qualquer dedo, torná-lo transparente
-    if (distToIndex < 0.03 || distToMiddle < 0.03 || distToRing < 0.03) {
+    if (distToIndexTip < maxD || distToIndexDip < maxD || distToIndexPip < maxD || distToMiddleTip < maxD || distToMiddleDip < maxD || distToMiddlePip < maxD || distToRingTip < maxD || distToRingDip < maxD || distToRingPip < maxD) {
         _output.color.a = 0.0;  // Torna o fragmento transparente
     } else {
         _output.color.a = 1.0;  // Mantém o fragmento visível
