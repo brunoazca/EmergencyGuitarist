@@ -71,7 +71,7 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         arView.scene.rootNode.addChildNode(debugNode) // Adiciona na cena
 
         arView.scene.rootNode.addChildNode(guitarNode)
-        setCurrentChord(.A)
+        setCurrentChord(.C)
         guitarNode.addChildNode(indexSphere)
         guitarNode.addChildNode(middleSphere)
         guitarNode.addChildNode(ringSphere)
@@ -269,15 +269,15 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
                let ringPip = recognizedPoints[.ringPIP],
                let ringMcp = recognizedPoints[.ringMCP] {
                 
-                let indexTipPosition = calculatePositionForShader(fingerPos: indexTip)
-                let indexDipPosition = calculatePositionForShader(fingerPos: indexDip)
-                let indexPipPosition = calculatePositionForShader(fingerPos: indexPip)
-                let middleTipPosition = calculatePositionForShader(fingerPos: middleTip)
-                let middleDipPosition = calculatePositionForShader(fingerPos: middleDip)
-                let middlePipPosition = calculatePositionForShader(fingerPos: middlePip)
-                let ringTipPosition = calculatePositionForShader(fingerPos: ringTip)
-                let ringDipPosition = calculatePositionForShader(fingerPos: ringDip)
-                let ringPipPosition = calculatePositionForShader(fingerPos: ringPip)
+                let indexTipPosition = calculatePositionForShader(fingerPos: indexTip, imageResolution: frame.camera.imageResolution)
+                let indexDipPosition = calculatePositionForShader(fingerPos: indexDip, imageResolution: frame.camera.imageResolution)
+                let indexPipPosition = calculatePositionForShader(fingerPos: indexPip, imageResolution: frame.camera.imageResolution)
+                let middleTipPosition = calculatePositionForShader(fingerPos: middleTip, imageResolution: frame.camera.imageResolution)
+                let middleDipPosition = calculatePositionForShader(fingerPos: middleDip, imageResolution: frame.camera.imageResolution)
+                let middlePipPosition = calculatePositionForShader(fingerPos: middlePip, imageResolution: frame.camera.imageResolution)
+                let ringTipPosition = calculatePositionForShader(fingerPos: ringTip, imageResolution: frame.camera.imageResolution)
+                let ringDipPosition = calculatePositionForShader(fingerPos: ringDip, imageResolution: frame.camera.imageResolution)
+                let ringPipPosition = calculatePositionForShader(fingerPos: ringPip, imageResolution: frame.camera.imageResolution)
 
                 if let material = guitarNode.childNodes[0].geometry?.firstMaterial {
                     material.setValue(NSValue(cgPoint: indexTipPosition), forKey: "indexTip")
@@ -304,14 +304,32 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         }
     }
     
-    func calculatePositionForShader(fingerPos: VNRecognizedPoint) -> CGPoint{
+    func calculatePositionForShader(fingerPos: VNRecognizedPoint, imageResolution: CGSize) -> CGPoint{
 //        let xFactor = 2*screenWidth/1000
-//        let xCorrection = xFactor/2
 //        let yFactor = 2*screenHeight/1000
-//        let yCorrection = yFactor/2
-//        return CGPoint(x: xFactor * fingerPos.location.x - xCorrection, y: yFactor * fingerPos.location.y - yCorrection)
-//        Gambiarra que funciona:
-        return CGPoint(x: 1.55 * fingerPos.location.x - 0.775, y: 1.2 * fingerPos.location.y - 0.6)
+        
+        let screenRatio = screenWidth / screenHeight
+        let resRatio =  imageResolution.width / imageResolution.height
+        let xFactor = 2*(0.39 + (0.8 / screenRatio))
+        let yFactor = xFactor / resRatio
+        let xCorrection = xFactor/2
+        let yCorrection = yFactor/2
+        return CGPoint(x: xFactor * fingerPos.location.x - xCorrection, y: yFactor * fingerPos.location.y - yCorrection)
+
+        //iphone: 852 x 393; resolution: 1440 x 1080
+        //ipad: 1080 x 810; resolution: 1280.0 X 720.0
+        //ratio width 2.16
+        //ratio resolution 1.333
+        //r/r = 1.6 -> scale
+        //ipad r/r -> 1.333/1.75 = 0.76
+        //0 a 850 -> -0.78 a 0.78 (1.55)
+        //0 a 390 -> -0.6 a 0.6 (1.2)
+//        Para iphone:
+//        return CGPoint(x: 1.55 * fingerPos.location.x - 0.775, y: 1.2 * fingerPos.location.y - 0.6)
+//        Para iPad:
+//        return CGPoint(x: 1.15 * fingerPos.location.x - 0.575, y: 0.675 * fingerPos.location.y - 0.3375)
+        
+        // multiplicadores x e y estao relacionados ao ratio resolution
     }
     
     func processFingerPosition(finger: Finger, fingerLocation: CGPoint, frame: ARFrame){
@@ -346,8 +364,8 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         
         let screenRatio = screenWidth/screenHeight
         let bufferRatio = pixelBufferWidth/pixelBufferHeight
-        
-        //ipad: 1080 x 810 - X 1.33x e Y 1.0x
+
+        //ipad: 1080 x 810 - X 1.33x e Y 1.0x ; resolution: 1280.0 X 720.0
         //iphone: 852 x 393 - X 1.0x e Y 1.6x ; resolution: 1440 x 1080
         var scaleFactorY = 1.0
         let halfScreenHeight = screenHeight/2
@@ -371,7 +389,7 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
             x: fingerTipUnscaledScreenPosition.x * scaleFactorX - Double(xCorrection),
             y: fingerTipUnscaledScreenPosition.y * scaleFactorY - Double(yCorrection)
         )
-        
+                
         var fingerTarget: TargetSphereNode = indexSphere
         switch finger {
             case .index:
@@ -450,7 +468,6 @@ let shader = """
     float2 ringTip;    // Posição do dedo anelar
     float2 ringDip;
     float2 ringPip;
-
     
     #pragma body
     
@@ -461,13 +478,10 @@ let shader = """
     float2 ringMid = (ringTip + ringDip) * 0.5;
     float2 ringDownMid = (ringDip + ringPip) * 0.5;
 
-    
     // Apenas os componentes x e y da posição ajustada
     float2 fragPos = _surface.position.xy/_surface.position.z;
     fragPos = -fragPos;
     
-    
-
     // Distância entre o fragmento e cada dedo
     float distToIndexTip = distance(fragPos, indexTip);
     float distToIndexDip = distance(fragPos, indexDip);
@@ -484,7 +498,7 @@ let shader = """
     float distToIndexDownMid = distance(fragPos, indexDownMid);
     float distToMiddleDownMid = distance(fragPos, middleDownMid);
     float distToRingDownMid = distance(fragPos, ringDownMid);
-    float maxD = 0.03;
+    float maxD = 0.024/-_surface.position.z;
     
     // Se o fragmento estiver muito próximo de qualquer dedo, torná-lo transparente
     if (distToIndexTip < maxD || distToIndexDip < maxD || distToIndexPip < maxD || distToIndexMid < maxD || distToIndexDownMid < maxD || distToMiddleTip < maxD || distToMiddleDip < maxD || distToMiddlePip < maxD || distToMiddleMid < maxD || distToMiddleDownMid < maxD || distToRingTip < maxD || distToRingDip < maxD || distToRingPip < maxD || distToRingMid < maxD || distToRingDownMid < maxD) {
@@ -495,6 +509,7 @@ let shader = """
     
     """
 }
+
 enum Finger {
     case index
     case middle

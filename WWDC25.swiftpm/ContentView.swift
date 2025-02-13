@@ -6,7 +6,7 @@ struct ContentView: View {
         ZStack{
             switch appRouter.router {
             case .sceneView:
-                ARSceneView(appRouter: appRouter)
+                GuitarView(appRouter: appRouter)
             }
         }.animation(.linear, value: appRouter.router)
     }

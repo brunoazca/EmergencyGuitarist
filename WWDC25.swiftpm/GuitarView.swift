@@ -7,14 +7,24 @@
 
 import Foundation
 import SwiftUI
+import SpriteKit
 
-struct ARSceneView: View{
+struct GuitarView: View{
     @ObservedObject var appRouter: AppRouter
+    @State var currentChord: SoundPlayer.Chord? = .A
+   
     var body: some View {
         ZStack{
             GeometryReader { geo in
                 ARSceneViewControllerRepresentable(size: geo.size, appRouter: appRouter)
+                SpriteKitViewRepresentable(size: geo.size, appRouter: appRouter)
+                       .frame(width: geo.size.width, height: geo.size.height)
+                       .background(Color.clear)
+                       .allowsHitTesting(true)
             }.ignoresSafeArea()
+               
         }
     }
 }
+    
+
