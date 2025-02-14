@@ -17,7 +17,13 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
     
     let screenWidth: CGFloat
     let screenHeight: CGFloat
+    var pixelBufferWidth: CGFloat = 0
+    var pixelBufferHeight: CGFloat = 0
+    var screenRatio: CGFloat = 0
+    var bufferRatio: CGFloat = 0
     
+    var frameCounter = 0
+
     let sequenceHandler = VNSequenceRequestHandler()
     let handPoseRequest = VNDetectHumanHandPoseRequest()
     var previousHandY: CGFloat?
@@ -27,10 +33,13 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
     var canPlay = true
     
     let guitarNode = SCNScene(named: "guitar.scn")!.rootNode.childNodes[0]
+    
+    var currentChordIndex = 0
+    var lastChordIndex = 0
    
-    let indexSphere = TargetSphereNode(finger: .index)
-    let middleSphere = TargetSphereNode(finger: .middle)
-    let ringSphere = TargetSphereNode(finger: .ring)
+    var indexSphere = TargetSphereNode(finger: .index)
+    var middleSphere = TargetSphereNode(finger: .middle)
+    var ringSphere = TargetSphereNode(finger: .ring)
 
     let debugNode: SCNNode = {
         let debugSphere = SCNSphere(radius: 0.02)
@@ -71,10 +80,7 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         arView.scene.rootNode.addChildNode(debugNode) // Adiciona na cena
 
         arView.scene.rootNode.addChildNode(guitarNode)
-        setCurrentChord(.C)
-        guitarNode.addChildNode(indexSphere)
-        guitarNode.addChildNode(middleSphere)
-        guitarNode.addChildNode(ringSphere)
+        setCurrentChord(.A)
 
         applyShader(to: guitarNode)
         guitarNode.position = SCNVector3(0, 0, 1)
@@ -82,6 +88,11 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         let billboardConstraint = SCNBillboardConstraint()
         billboardConstraint.freeAxes = SCNBillboardAxis.Y
         guitarNode.constraints = [billboardConstraint]
+        
+        
+        guitarNode.addChildNode(indexSphere)
+        guitarNode.addChildNode(middleSphere)
+        guitarNode.addChildNode(ringSphere)
     }
     
     required init?(coder: NSCoder) {
@@ -105,26 +116,46 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         let ringPosition = chordScheme.childNode(withName: "ring", recursively: true)!
         
         indexSphere.position = SCNVector3(
-            x: -indexPosition.worldPosition.x,
-            y: indexPosition.worldPosition.y,
-            z: indexPosition.worldPosition.z
+            x: -(indexPosition.worldPosition.x - guitarNode.worldPosition.x),
+            y: indexPosition.worldPosition.y - guitarNode.worldPosition.y,
+            z: indexPosition.worldPosition.z - guitarNode.worldPosition.z
         )
         middleSphere.position = SCNVector3(
-            x: -middlePosition.worldPosition.x,
-            y: middlePosition.worldPosition.y,
-            z: middlePosition.worldPosition.z
+            x: -(middlePosition.worldPosition.x - guitarNode.worldPosition.x),
+            y: middlePosition.worldPosition.y - guitarNode.worldPosition.y,
+            z: middlePosition.worldPosition.z - guitarNode.worldPosition.z
         )
         ringSphere.position = SCNVector3(
-            x: -ringPosition.worldPosition.x,
-            y: ringPosition.worldPosition.y,
-            z: ringPosition.worldPosition.z
+            x: -(ringPosition.worldPosition.x - guitarNode.worldPosition.x),
+            y: ringPosition.worldPosition.y - guitarNode.worldPosition.y,
+            z: ringPosition.worldPosition.z - guitarNode.worldPosition.z
         )
     }
 
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        frameCounter += 1
+        if (screenRatio == 0){
+            pixelBufferWidth = frame.camera.imageResolution.width
+            pixelBufferHeight = frame.camera.imageResolution.height
+            screenRatio = screenWidth / screenHeight
+            bufferRatio = pixelBufferWidth / pixelBufferHeight
+        }
+        
         let pixelBuffer = frame.capturedImage
-        processHandPose(pixelBuffer: pixelBuffer, frame)
-        positionGuitar(frame: frame)
+        
+        if frameCounter % 3 == 0 {
+            processHandPose(pixelBuffer: pixelBuffer, frame)
+            positionGuitar(frame: frame)
+        }
+        
+        currentChordIndex = AppLibrary.Instance.currentIndex
+        
+        if(currentChordIndex != lastChordIndex){
+            print("Mudou o acorde")
+            setCurrentChord(AppLibrary.Instance.currentChord!)
+        }
+        
+        lastChordIndex = currentChordIndex
     }
     
     // Método para posicionar o violão com base na face (câmera frontal)
@@ -212,12 +243,11 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
                 
                 // Converta o ponto normalizado do Vision para coordenadas 2D
                 let wristY = wristPoint.y // Apenas o valor Y para detectar movimentos verticais
-                print(wristY)
                 if let previousY = previousHandY {
                     // Calcule a diferença de Y entre frames
                     let movementDelta = wristY - previousY
                     
-                    if movementDelta < -0.1 { // Threshold para "cima para baixo"
+                    if movementDelta < -0.05 { // Threshold para "cima para baixo"
                         print("Hand moved DOWN")
                         if let chord = currentChord {
                             if (indexSphere.isTouched && middleSphere.isTouched && ringSphere.isTouched){
@@ -226,7 +256,7 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
                                     canPlay = false  // Bloqueia a execução
 
                                     // Define um cooldown de 0.5 segundos antes de permitir outra execução
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                                         self.canPlay = true
                                     }
                                 }
@@ -269,15 +299,15 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
                let ringPip = recognizedPoints[.ringPIP],
                let ringMcp = recognizedPoints[.ringMCP] {
                 
-                let indexTipPosition = calculatePositionForShader(fingerPos: indexTip, imageResolution: frame.camera.imageResolution)
-                let indexDipPosition = calculatePositionForShader(fingerPos: indexDip, imageResolution: frame.camera.imageResolution)
-                let indexPipPosition = calculatePositionForShader(fingerPos: indexPip, imageResolution: frame.camera.imageResolution)
-                let middleTipPosition = calculatePositionForShader(fingerPos: middleTip, imageResolution: frame.camera.imageResolution)
-                let middleDipPosition = calculatePositionForShader(fingerPos: middleDip, imageResolution: frame.camera.imageResolution)
-                let middlePipPosition = calculatePositionForShader(fingerPos: middlePip, imageResolution: frame.camera.imageResolution)
-                let ringTipPosition = calculatePositionForShader(fingerPos: ringTip, imageResolution: frame.camera.imageResolution)
-                let ringDipPosition = calculatePositionForShader(fingerPos: ringDip, imageResolution: frame.camera.imageResolution)
-                let ringPipPosition = calculatePositionForShader(fingerPos: ringPip, imageResolution: frame.camera.imageResolution)
+                let indexTipPosition = calculatePositionForShader(fingerPos: indexTip)
+                let indexDipPosition = calculatePositionForShader(fingerPos: indexDip)
+                let indexPipPosition = calculatePositionForShader(fingerPos: indexPip)
+                let middleTipPosition = calculatePositionForShader(fingerPos: middleTip)
+                let middleDipPosition = calculatePositionForShader(fingerPos: middleDip)
+                let middlePipPosition = calculatePositionForShader(fingerPos: middlePip)
+                let ringTipPosition = calculatePositionForShader(fingerPos: ringTip)
+                let ringDipPosition = calculatePositionForShader(fingerPos: ringDip)
+                let ringPipPosition = calculatePositionForShader(fingerPos: ringPip)
 
                 if let material = guitarNode.childNodes[0].geometry?.firstMaterial {
                     material.setValue(NSValue(cgPoint: indexTipPosition), forKey: "indexTip")
@@ -304,12 +334,12 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         }
     }
     
-    func calculatePositionForShader(fingerPos: VNRecognizedPoint, imageResolution: CGSize) -> CGPoint{
+    func calculatePositionForShader(fingerPos: VNRecognizedPoint) -> CGPoint{
 //        let xFactor = 2*screenWidth/1000
 //        let yFactor = 2*screenHeight/1000
         
         let screenRatio = screenWidth / screenHeight
-        let resRatio =  imageResolution.width / imageResolution.height
+        let resRatio =  pixelBufferWidth / pixelBufferHeight
         let xFactor = 2*(0.39 + (0.8 / screenRatio))
         let yFactor = xFactor / resRatio
         let xCorrection = xFactor/2
@@ -333,11 +363,9 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
     }
     
     func processFingerPosition(finger: Finger, fingerLocation: CGPoint, frame: ARFrame){
-        let pixelBufferWidth = frame.camera.imageResolution.width
-        let pixelBufferHeight = frame.camera.imageResolution.height
         
         // Converter a posição do ponto para coordenadas do PixelBuffer
-        var fingerTipPixelBufferPosition = CGPoint(
+        let fingerTipPixelBufferPosition = CGPoint(
             x: fingerLocation.x * pixelBufferWidth,
             y: (1 - fingerLocation.y) * pixelBufferHeight // Ajuste do eixo Y
         )
@@ -498,7 +526,7 @@ let shader = """
     float distToIndexDownMid = distance(fragPos, indexDownMid);
     float distToMiddleDownMid = distance(fragPos, middleDownMid);
     float distToRingDownMid = distance(fragPos, ringDownMid);
-    float maxD = 0.024/-_surface.position.z;
+    float maxD = 0.028/-_surface.position.z;
     
     // Se o fragmento estiver muito próximo de qualquer dedo, torná-lo transparente
     if (distToIndexTip < maxD || distToIndexDip < maxD || distToIndexPip < maxD || distToIndexMid < maxD || distToIndexDownMid < maxD || distToMiddleTip < maxD || distToMiddleDip < maxD || distToMiddlePip < maxD || distToMiddleMid < maxD || distToMiddleDownMid < maxD || distToRingTip < maxD || distToRingDip < maxD || distToRingPip < maxD || distToRingMid < maxD || distToRingDownMid < maxD) {

@@ -11,7 +11,8 @@ import SpriteKit
 
 struct GuitarView: View{
     @ObservedObject var appRouter: AppRouter
-    @State var currentChord: SoundPlayer.Chord? = .A
+    
+    var currentChordIndex: Int = 0
    
     var body: some View {
         ZStack{
