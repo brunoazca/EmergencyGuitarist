@@ -32,7 +32,8 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
     var currentChord: SoundPlayer.Chord? = nil
     var canPlay = true
     
-    let guitarNode = SCNScene(named: "guitar.scn")!.rootNode.childNodes[0]
+    let guitarNode = SCNScene(named: "modifiedGuitar.scn")!.rootNode
+    var shadableNodes: [SCNNode] = []
     
     var currentChordIndex = 0
     var lastChordIndex = 0
@@ -69,6 +70,13 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         arView.debugOptions = []
         arView.backgroundColor = UIColor.black
         
+        shadableNodes.append(guitarNode.childNode(withName: "Cylinder_009", recursively: true)!)
+        shadableNodes.append(guitarNode.childNode(withName: "Cylinder_008", recursively: true)!)
+        
+        for node in shadableNodes {
+            applyShader(to: node)
+        }
+        
         // Configurar a sessão de AR (camera de selfie)
         let configuration = ARFaceTrackingConfiguration()
         
@@ -82,7 +90,6 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         arView.scene.rootNode.addChildNode(guitarNode)
         setCurrentChord(.A)
 
-        applyShader(to: guitarNode)
         guitarNode.position = SCNVector3(0, 0, 1)
         // Aplica a rotação no eixo Y do violão, para que ele olhe para a direção da câmera
         let billboardConstraint = SCNBillboardConstraint()
@@ -116,17 +123,17 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         let ringPosition = chordScheme.childNode(withName: "ring", recursively: true)!
         
         indexSphere.position = SCNVector3(
-            x: -(indexPosition.worldPosition.x - guitarNode.worldPosition.x),
+            x: indexPosition.worldPosition.x - guitarNode.worldPosition.x,
             y: indexPosition.worldPosition.y - guitarNode.worldPosition.y,
             z: indexPosition.worldPosition.z - guitarNode.worldPosition.z
         )
         middleSphere.position = SCNVector3(
-            x: -(middlePosition.worldPosition.x - guitarNode.worldPosition.x),
+            x: middlePosition.worldPosition.x - guitarNode.worldPosition.x,
             y: middlePosition.worldPosition.y - guitarNode.worldPosition.y,
             z: middlePosition.worldPosition.z - guitarNode.worldPosition.z
         )
         ringSphere.position = SCNVector3(
-            x: -(ringPosition.worldPosition.x - guitarNode.worldPosition.x),
+            x: ringPosition.worldPosition.x - guitarNode.worldPosition.x,
             y: ringPosition.worldPosition.y - guitarNode.worldPosition.y,
             z: ringPosition.worldPosition.z - guitarNode.worldPosition.z
         )
@@ -163,7 +170,7 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         
         // Definir os valores de deslocamento
         let distanceToCamera: Float = 0.5
-        let leftOffset: Float = 0
+        let leftOffset: Float = -0.5
         let downOffset: Float = 0.5
         
         // Obtém a âncora da face rastreada pela câmera frontal
@@ -308,20 +315,23 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
                 let ringTipPosition = calculatePositionForShader(fingerPos: ringTip)
                 let ringDipPosition = calculatePositionForShader(fingerPos: ringDip)
                 let ringPipPosition = calculatePositionForShader(fingerPos: ringPip)
+                
+                for node in shadableNodes {
+                    if let material = node.geometry?.firstMaterial {
+                        material.setValue(NSValue(cgPoint: indexTipPosition), forKey: "indexTip")
+                        material.setValue(NSValue(cgPoint: indexDipPosition), forKey: "indexDip")
+                        material.setValue(NSValue(cgPoint: indexPipPosition), forKey: "indexPip")
 
-                if let material = guitarNode.childNodes[0].geometry?.firstMaterial {
-                    material.setValue(NSValue(cgPoint: indexTipPosition), forKey: "indexTip")
-                    material.setValue(NSValue(cgPoint: indexDipPosition), forKey: "indexDip")
-                    material.setValue(NSValue(cgPoint: indexPipPosition), forKey: "indexPip")
+                        material.setValue(NSValue(cgPoint: middleTipPosition), forKey: "middleTip")
+                        material.setValue(NSValue(cgPoint: middleDipPosition), forKey: "middleDip")
+                        material.setValue(NSValue(cgPoint: middlePipPosition), forKey: "middlePip")
 
-                    material.setValue(NSValue(cgPoint: middleTipPosition), forKey: "middleTip")
-                    material.setValue(NSValue(cgPoint: middleDipPosition), forKey: "middleDip")
-                    material.setValue(NSValue(cgPoint: middlePipPosition), forKey: "middlePip")
-
-                    material.setValue(NSValue(cgPoint: ringTipPosition), forKey: "ringTip")
-                    material.setValue(NSValue(cgPoint: ringDipPosition), forKey: "ringDip")
-                    material.setValue(NSValue(cgPoint: ringPipPosition), forKey: "ringPip")
+                        material.setValue(NSValue(cgPoint: ringTipPosition), forKey: "ringTip")
+                        material.setValue(NSValue(cgPoint: ringDipPosition), forKey: "ringDip")
+                        material.setValue(NSValue(cgPoint: ringPipPosition), forKey: "ringPip")
+                    }
                 }
+                
                 
                 processFingerPosition(finger: .index, fingerLocation: indexTip.location, frame: frame)
                 processFingerPosition(finger: .middle, fingerLocation: middleTip.location, frame: frame)
@@ -469,7 +479,10 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
     }
     
     func applyShader(to node: SCNNode) {
-        guard let material = node.childNodes[0].geometry?.firstMaterial else { return }
+        guard let material = node.geometry?.firstMaterial else {
+            print("No material for shader to be applied")
+            return
+        }
             
         material.shaderModifiers = [.fragment: shader]
         material.setValue(NSValue(cgPoint: CGPointZero), forKey: "indexTip")
@@ -542,4 +555,8 @@ enum Finger {
     case index
     case middle
     case ring
+}
+
+#Preview {
+    GuitarView(appRouter: AppRouter())
 }
