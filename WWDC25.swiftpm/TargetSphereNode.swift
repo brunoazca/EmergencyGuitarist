@@ -11,15 +11,28 @@ import ARKit
 
 class TargetSphereNode: SCNNode {
     let finger: Finger
+    let color: UIColor
     var isTouched = false
     
     init(finger: Finger) {
         self.finger = finger
+        switch finger {
+            case .index:
+                color = UIColor.blue
+            case .middle:
+                color = UIColor.orange
+            case .ring:
+                color = UIColor.purple
+        }
+        
         super.init()
-        let sphere = SCNSphere(radius: 0.015)
+        let sphere = SCNSphere(radius: 0.017)
         self.geometry = sphere
         let material = SCNMaterial()
-        material.diffuse.contents = UIColor.red
+        material.diffuse.contents = color
+        material.emission.contents = color
+        
+
         self.geometry?.materials = [material]
     }
     

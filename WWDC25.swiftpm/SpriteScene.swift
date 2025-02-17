@@ -13,7 +13,7 @@ class SpriteScene: SKScene {
     @ObservedObject var appRouter: AppRouter
     
     var metronomeNode: SKShapeNode {
-        let node = SKShapeNode(rect: CGRect(x: 0, y: 0, width: 10, height: 70))
+        let node = SKShapeNode(rect: CGRect(x: 0, y: 0, width: 10, height: self.frame.height/8))
         node.fillColor = .gray
         node.strokeColor = .black
         return node
@@ -68,14 +68,14 @@ class SpriteScene: SKScene {
     
     func addChildChord(node: SKNode){
         let chordLabel = SKLabelNode(text: AppLibrary.Instance.currentChord?.rawValue)
-        chordLabel.fontSize = 70
-        chordLabel.position = CGPoint(x:node.frame.width/2, y: 110)
+        chordLabel.fontSize = metronomeNode.frame.height
+        chordLabel.position = CGPoint(x:node.frame.width/2, y: chordLabel.frame.height + node.frame.height/2)
         node.addChild(chordLabel)
         AppLibrary.Instance.currentIndex += 1
     }
     
     override func sceneDidLoad() {
-        initMetronomeField()
+//        initMetronomeField()
     }
     
     override func update(_ currentTime: TimeInterval) {

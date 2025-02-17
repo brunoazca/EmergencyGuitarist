@@ -11,7 +11,7 @@ class AppLibrary {
     static let Instance = AppLibrary()
     private init () {}
     
-    let chordSequence: [SoundPlayer.Chord] = [.A,.C,.A,.C,.A,.C]
+    let chordSequence: [SoundPlayer.Chord] = [.A,.C,.E,.A,.C,.E,.A,.C,.E]
     
     var currentIndex: Int = 0
     var currentChord: SoundPlayer.Chord?  {

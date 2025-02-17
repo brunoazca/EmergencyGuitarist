@@ -19,3 +19,4 @@ enum Router{
 class AppRouter: ObservableObject {
     @Published var router: Router = .sceneView
 }
+

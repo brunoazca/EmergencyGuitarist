@@ -33,6 +33,15 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
     var canPlay = true
     
     let guitarNode = SCNScene(named: "modifiedGuitar.scn")!.rootNode
+    let leftPupil = SCNScene(named: "modifiedGuitar.scn")!.rootNode.childNode(withName: "PupilL", recursively: true)!
+    let rightPupil = SCNScene(named: "modifiedGuitar.scn")!.rootNode.childNode(withName: "PupilR", recursively: true)!
+
+    let trastes = SCNScene(named: "modifiedGuitar.scn")!.rootNode.childNode(withName: "Plane_006", recursively: true)!
+    let cordas1 = SCNScene(named: "modifiedGuitar.scn")!.rootNode.childNode(withName: "Cylinder_013", recursively: true)!
+    let cordas2 = SCNScene(named: "modifiedGuitar.scn")!.rootNode.childNode(withName: "Cylinder_014", recursively: true)!
+    let cordas3 = SCNScene(named: "modifiedGuitar.scn")!.rootNode.childNode(withName: "Cylinder_015", recursively: true)!
+
+
     var shadableNodes: [SCNNode] = []
     
     var currentChordIndex = 0
@@ -42,12 +51,27 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
     var middleSphere = TargetSphereNode(finger: .middle)
     var ringSphere = TargetSphereNode(finger: .ring)
 
-    let debugNode: SCNNode = {
-        let debugSphere = SCNSphere(radius: 0.02)
+    let indexDebugNode: SCNNode = {
+        let debugSphere = SCNSphere(radius: 0.012)
         let debugMaterial = SCNMaterial()
-        debugMaterial.diffuse.contents = UIColor.systemPink
+        debugMaterial.diffuse.contents = UIColor.blue
         debugSphere.materials = [debugMaterial]
-
+        let debugNode = SCNNode(geometry: debugSphere)
+        return debugNode
+    }()
+    let middleDebugNode: SCNNode = {
+        let debugSphere = SCNSphere(radius: 0.012)
+        let debugMaterial = SCNMaterial()
+        debugMaterial.diffuse.contents = UIColor.orange
+        debugSphere.materials = [debugMaterial]
+        let debugNode = SCNNode(geometry: debugSphere)
+        return debugNode
+    }()
+    let ringDebugNode: SCNNode = {
+        let debugSphere = SCNSphere(radius: 0.012)
+        let debugMaterial = SCNMaterial()
+        debugMaterial.diffuse.contents = UIColor.purple
+        debugSphere.materials = [debugMaterial]
         let debugNode = SCNNode(geometry: debugSphere)
         return debugNode
     }()
@@ -72,6 +96,11 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         
         shadableNodes.append(guitarNode.childNode(withName: "Cylinder_009", recursively: true)!)
         shadableNodes.append(guitarNode.childNode(withName: "Cylinder_008", recursively: true)!)
+        shadableNodes.append(trastes)
+        shadableNodes.append(cordas1)
+        shadableNodes.append(cordas2)
+        shadableNodes.append(cordas3)
+
         
         for node in shadableNodes {
             applyShader(to: node)
@@ -85,7 +114,9 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         // Permite usar iluminação adaptativa
         arView.session.run(configuration)
 
-        arView.scene.rootNode.addChildNode(debugNode) // Adiciona na cena
+        arView.scene.rootNode.addChildNode(indexDebugNode)
+        arView.scene.rootNode.addChildNode(middleDebugNode)
+        arView.scene.rootNode.addChildNode(ringDebugNode)
 
         arView.scene.rootNode.addChildNode(guitarNode)
         setCurrentChord(.A)
@@ -95,7 +126,6 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         let billboardConstraint = SCNBillboardConstraint()
         billboardConstraint.freeAxes = SCNBillboardAxis.Y
         guitarNode.constraints = [billboardConstraint]
-        
         
         guitarNode.addChildNode(indexSphere)
         guitarNode.addChildNode(middleSphere)
@@ -254,7 +284,7 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
                     // Calcule a diferença de Y entre frames
                     let movementDelta = wristY - previousY
                     
-                    if movementDelta < -0.05 { // Threshold para "cima para baixo"
+                    if movementDelta < -0.08 { // Threshold para "cima para baixo"
                         print("Hand moved DOWN")
                         if let chord = currentChord {
                             if (indexSphere.isTouched && middleSphere.isTouched && ringSphere.isTouched){
@@ -263,7 +293,7 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
                                     canPlay = false  // Bloqueia a execução
 
                                     // Define um cooldown de 0.5 segundos antes de permitir outra execução
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                                         self.canPlay = true
                                     }
                                 }
@@ -329,6 +359,8 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
                         material.setValue(NSValue(cgPoint: ringTipPosition), forKey: "ringTip")
                         material.setValue(NSValue(cgPoint: ringDipPosition), forKey: "ringDip")
                         material.setValue(NSValue(cgPoint: ringPipPosition), forKey: "ringPip")
+                    } else {
+                        print("No material to shade")
                     }
                 }
                 
@@ -465,18 +497,51 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
             fingerTargetWorldPos.y - unprojectedFinger.y
         )
         
-        debugNode.position = unprojectedFinger
+        switch finger {
+            case .index:
+                indexDebugNode.position = unprojectedFinger
+            case .middle:
+                middleDebugNode.position = unprojectedFinger
+            case .ring:
+                ringDebugNode.position = unprojectedFinger
+        }
         
         if distance < 0.03 {
-            fingerTarget.geometry?.firstMaterial?.diffuse.contents = UIColor.green
-            fingerTarget.geometry?.firstMaterial?.emission.contents = UIColor.green
+            fingerTarget.geometry?.firstMaterial?.emission.intensity = 10
+            fingerTarget.geometry?.firstMaterial?.selfIllumination.intensity = 10
+//            fingerTarget.geometry?.firstMaterial?.diffuse.contents = UIColor.green
+//            fingerTarget.geometry?.firstMaterial?.emission.contents = UIColor.green
             fingerTarget.isTouched = true
         } else {
-            fingerTarget.geometry?.firstMaterial?.diffuse.contents = UIColor.red
-            fingerTarget.geometry?.firstMaterial?.emission.contents = UIColor.red
+//            fingerTarget.geometry?.firstMaterial?.diffuse.contents = fingerTarget.color
+//            fingerTarget.geometry?.firstMaterial?.emission.contents = fingerTarget.color
+            fingerTarget.geometry?.firstMaterial?.emission.intensity = 0.1
+            fingerTarget.geometry?.firstMaterial?.selfIllumination.intensity = 0.1
             fingerTarget.isTouched = false
         }
+        
+//        if (finger == .index) {
+//            animateEyes(indexTipPos: unprojectedFinger)
+//        }
     }
+//    
+//    func animateEyes(indexTipPos: SCNVector3){
+//        let leftPupilWorldTransform = leftPupil.presentation.worldTransform
+//        let leftPupilPos = guitarNode.worldPosition
+//        
+//        let distance = SCNVector3(x: indexTipPos.x - leftPupilPos.x, y: indexTipPos.y - leftPupilPos.y, z: indexTipPos.z - leftPupilPos.z)
+//        
+//        let normalizedDistance = distance.normalized()
+//
+//        let eyeBounds = SCNVector3(x: 100, y: 100, z: 0)
+//        let movement = SCNVector3(normalizedDistance.x * eyeBounds.x,
+//                                  normalizedDistance.y * eyeBounds.y,
+//                                  normalizedDistance.z * eyeBounds.z)
+//
+//        leftPupil.worldPosition = SCNVector3(x: movement.x, y: movement.y, z: movement.z)
+//        print(leftPupil.position)
+//
+//    }
     
     func applyShader(to node: SCNNode) {
         guard let material = node.geometry?.firstMaterial else {
@@ -495,8 +560,6 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         material.setValue(NSValue(cgPoint: CGPointZero), forKey: "ringDip")
         material.setValue(NSValue(cgPoint: CGPointZero), forKey: "ringPip")
     }
-    
-
 
 let shader = """
     #pragma arguments
@@ -539,7 +602,7 @@ let shader = """
     float distToIndexDownMid = distance(fragPos, indexDownMid);
     float distToMiddleDownMid = distance(fragPos, middleDownMid);
     float distToRingDownMid = distance(fragPos, ringDownMid);
-    float maxD = 0.028/-_surface.position.z;
+    float maxD = 0.023/-_surface.position.z;
     
     // Se o fragmento estiver muito próximo de qualquer dedo, torná-lo transparente
     if (distToIndexTip < maxD || distToIndexDip < maxD || distToIndexPip < maxD || distToIndexMid < maxD || distToIndexDownMid < maxD || distToMiddleTip < maxD || distToMiddleDip < maxD || distToMiddlePip < maxD || distToMiddleMid < maxD || distToMiddleDownMid < maxD || distToRingTip < maxD || distToRingDip < maxD || distToRingPip < maxD || distToRingMid < maxD || distToRingDownMid < maxD) {
@@ -555,6 +618,20 @@ enum Finger {
     case index
     case middle
     case ring
+}
+
+extension SCNVector3 {
+    /// Retorna o vetor normalizado (magnitude = 1)
+    func normalized() -> SCNVector3 {
+        let length = sqrt(x * x + y * y + z * z)
+        guard length != 0 else { return self } // Evita divisão por zero
+        return SCNVector3(x / length, y / length, z / length)
+    }
+    
+    /// Normaliza o próprio vetor (modifica a instância)
+    mutating func normalize() {
+        self = self.normalized()
+    }
 }
 
 #Preview {
