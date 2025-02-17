@@ -54,7 +54,7 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
     let indexDebugNode: SCNNode = {
         let debugSphere = SCNSphere(radius: 0.012)
         let debugMaterial = SCNMaterial()
-        debugMaterial.diffuse.contents = UIColor.blue
+        debugMaterial.diffuse.contents = UIColor.cyan
         debugSphere.materials = [debugMaterial]
         let debugNode = SCNNode(geometry: debugSphere)
         return debugNode
@@ -107,17 +107,21 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         }
         
         // Configurar a sessão de AR (camera de selfie)
-        let configuration = ARFaceTrackingConfiguration()
         
         handPoseRequest.maximumHandCount = 2 // Detecta apenas uma mão
+        NotificationCenter.default.addObserver(forName: UIDevice.orientationDidChangeNotification, object: nil, queue: .main) { _ in
+                   self.handleOrientationChange()
+               }
+        
+        let configuration = ARFaceTrackingConfiguration()
 
         // Permite usar iluminação adaptativa
-        arView.session.run(configuration)
+        arView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+
 
         arView.scene.rootNode.addChildNode(indexDebugNode)
         arView.scene.rootNode.addChildNode(middleDebugNode)
         arView.scene.rootNode.addChildNode(ringDebugNode)
-
         arView.scene.rootNode.addChildNode(guitarNode)
         setCurrentChord(.A)
 
@@ -180,7 +184,7 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         
         let pixelBuffer = frame.capturedImage
         
-        if frameCounter % 3 == 0 {
+        if frameCounter % 5 == 0 {
             processHandPose(pixelBuffer: pixelBuffer, frame)
             positionGuitar(frame: frame)
         }
@@ -515,8 +519,8 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         } else {
 //            fingerTarget.geometry?.firstMaterial?.diffuse.contents = fingerTarget.color
 //            fingerTarget.geometry?.firstMaterial?.emission.contents = fingerTarget.color
-            fingerTarget.geometry?.firstMaterial?.emission.intensity = 0.1
-            fingerTarget.geometry?.firstMaterial?.selfIllumination.intensity = 0.1
+            fingerTarget.geometry?.firstMaterial?.emission.intensity = 0
+            fingerTarget.geometry?.firstMaterial?.selfIllumination.intensity = 0
             fingerTarget.isTouched = false
         }
         
@@ -559,6 +563,32 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         material.setValue(NSValue(cgPoint: CGPointZero), forKey: "ringTip")
         material.setValue(NSValue(cgPoint: CGPointZero), forKey: "ringDip")
         material.setValue(NSValue(cgPoint: CGPointZero), forKey: "ringPip")
+    }
+    
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        
+        // Pausar a sessão AR antes de alterar a orientação
+        arView.session.pause()
+
+        // Alterar o tamanho do ARView conforme necessário
+        arView.frame = CGRect(x: 0, y: 0, width: size.width, height: size.height)
+
+        // Reiniciar a sessão AR
+        arView.session.run(ARFaceTrackingConfiguration(), options: [.resetTracking, .removeExistingAnchors])
+    }
+
+    func handleOrientationChange() {
+            // Atualize a configuração da sessão AR com base na nova orientação do dispositivo
+        print("Mudou orientação")
+        if let currentFrame = arView.session.currentFrame {
+            // Aqui você pode resetar a AR session ou configurar a perspectiva conforme necessário
+            arView.session.pause()
+            let configuration = ARFaceTrackingConfiguration()
+
+            // Permite usar iluminação adaptativa
+            arView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+        }
     }
 
 let shader = """

@@ -18,11 +18,13 @@ class TargetSphereNode: SCNNode {
         self.finger = finger
         switch finger {
             case .index:
-                color = UIColor.blue
+                color = UIColor(cgColor: CGColor(red: 0, green: 0.5, blue: 0.5, alpha: 1))
             case .middle:
-                color = UIColor.orange
+                color = UIColor(cgColor: CGColor(red: 0.5, green: 0.5, blue: 0, alpha: 1))
             case .ring:
-                color = UIColor.purple
+                color = UIColor(cgColor: CGColor(red: 0.5, green: 0, blue: 0.5, alpha: 1))
+
+
         }
         
         super.init()
@@ -32,7 +34,6 @@ class TargetSphereNode: SCNNode {
         material.diffuse.contents = color
         material.emission.contents = color
         
-
         self.geometry?.materials = [material]
     }
     
