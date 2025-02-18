@@ -29,7 +29,6 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
     var previousHandY: CGFloat?
     
     let soundPlayer = SoundPlayer()
-    var currentChord: SoundPlayer.Chord? = nil
     var canPlay = true
     
     let guitarNode = SCNScene(named: "modifiedGuitar.scn")!.rootNode
@@ -44,8 +43,8 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
 
     var shadableNodes: [SCNNode] = []
     
-    var currentChordIndex = 0
-    var lastChordIndex = 0
+    var currentChord: SoundPlayer.Chord? = nil
+    var lastChord: SoundPlayer.Chord? = nil
    
     var indexSphere = TargetSphereNode(finger: .index)
     var middleSphere = TargetSphereNode(finger: .middle)
@@ -121,7 +120,6 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         arView.scene.rootNode.addChildNode(middleDebugNode)
         arView.scene.rootNode.addChildNode(ringDebugNode)
         arView.scene.rootNode.addChildNode(guitarNode)
-        setCurrentChord(.A)
 
         guitarNode.position = SCNVector3(0, 0, 1)
         // Aplica a rotação no eixo Y do violão, para que ele olhe para a direção da câmera
@@ -187,14 +185,16 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
             positionGuitar(frame: frame)
         }
         
-        currentChordIndex = AppLibrary.Instance.currentIndex
+        currentChord = AppLibrary.Instance.currentChord
         
-        if(currentChordIndex != lastChordIndex){
-            print("Mudou o acorde")
-            setCurrentChord(AppLibrary.Instance.currentChord!)
+        if let currentChord {
+            if (currentChord != lastChord){
+                print("Mudou o acorde")
+                setCurrentChord(currentChord)
+            }
         }
         
-        lastChordIndex = currentChordIndex
+        lastChord = currentChord
     }
     
     // Método para posicionar o violão com base na face (câmera frontal)

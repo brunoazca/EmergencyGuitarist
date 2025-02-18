@@ -91,7 +91,11 @@ struct CountdownRing: View {
                     self.duration = 2
                     self.color = .green
                 } else {
-                    AppLibrary.Instance.currentIndex += 1
+                    AppLibrary.Instance.currentChordIndex += 1
+                    if AppLibrary.Instance.chordSequence.count <= AppLibrary.Instance.currentChordIndex {
+                        AppLibrary.Instance.currentChordIndex = 0
+                    }
+                    AppLibrary.Instance.currentChord = AppLibrary.Instance.chordSequence[AppLibrary.Instance.currentChordIndex]
                     self.duration = 3
                     self.color = .blue
                 }
