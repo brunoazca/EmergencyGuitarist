@@ -109,9 +109,7 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         // Configurar a sessão de AR (camera de selfie)
         
         handPoseRequest.maximumHandCount = 2 // Detecta apenas uma mão
-        NotificationCenter.default.addObserver(forName: UIDevice.orientationDidChangeNotification, object: nil, queue: .main) { _ in
-                   self.handleOrientationChange()
-               }
+       
         
         let configuration = ARFaceTrackingConfiguration()
 
@@ -386,7 +384,9 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         
         let screenRatio = screenWidth / screenHeight
         let resRatio =  pixelBufferWidth / pixelBufferHeight
-        let xFactor = 2*(0.39 + (0.8 / screenRatio))
+//        let xFactor = 2*(0.39 + (0.8 / screenRatio))
+        let xFactor = 1.55
+
         let yFactor = xFactor / resRatio
         let xCorrection = xFactor/2
         let yCorrection = yFactor/2
@@ -565,32 +565,6 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         material.setValue(NSValue(cgPoint: CGPointZero), forKey: "ringPip")
     }
     
-    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
-        super.viewWillTransition(to: size, with: coordinator)
-        
-        // Pausar a sessão AR antes de alterar a orientação
-        arView.session.pause()
-
-        // Alterar o tamanho do ARView conforme necessário
-        arView.frame = CGRect(x: 0, y: 0, width: size.width, height: size.height)
-
-        // Reiniciar a sessão AR
-        arView.session.run(ARFaceTrackingConfiguration(), options: [.resetTracking, .removeExistingAnchors])
-    }
-
-    func handleOrientationChange() {
-            // Atualize a configuração da sessão AR com base na nova orientação do dispositivo
-        print("Mudou orientação")
-        if let currentFrame = arView.session.currentFrame {
-            // Aqui você pode resetar a AR session ou configurar a perspectiva conforme necessário
-            arView.session.pause()
-            let configuration = ARFaceTrackingConfiguration()
-
-            // Permite usar iluminação adaptativa
-            arView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
-        }
-    }
-
 let shader = """
     #pragma arguments
     float2 indexTip;   // Posição do dedo indicador

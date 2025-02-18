@@ -11,21 +11,22 @@ struct CountdownRing: View {
     @State private var duration: TimeInterval = 3 // Duração da animação
     @State private var isPlay = false
     @State private var color = Color.blue
+    @State private var accumulatedInterval: CGFloat = 0
 
     var isIPad: Bool {
         UIDevice.current.userInterfaceIdiom == .pad
     }
 
-    var soundPlayer =  SoundPlayer()
+    var soundPlayer = SoundPlayer()
 
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 25.0)
                 .opacity(0.6)
-                .shadow(color: .black, radius: 30, x: 0, y: 0) // Grande sombra
+                .shadow(color: .black, radius: 30, x: 0, y: 0)
                 .frame(width: isIPad ? 220 : 110, height: isIPad ? 220 : 110)
-                .overlay{
-                    ZStack{
+                .overlay {
+                    ZStack {
                         Canvas { context, size in
                             let center = CGPoint(x: size.width / 2, y: size.height / 2)
                             let radius = min(size.width, size.height) / 2 - 10
@@ -38,7 +39,7 @@ struct CountdownRing: View {
                             context.stroke(path, with: .color(color), lineWidth: isIPad ? 20 : 10)
                         }
                         if !isPlay {
-                            Text(((progress * duration) + 1).description.prefix(1))
+                            Text("\(Int(ceil(progress * duration)))")
                                 .foregroundStyle(.white)
                                 .font(.system(size: isIPad ? 50 : 25))
                                 .fontWeight(.bold)
@@ -50,9 +51,7 @@ struct CountdownRing: View {
                         }
                     }
                     .padding()
-                    
                 }
-            
         }
         .onAppear {
             startCountdown()
@@ -60,41 +59,48 @@ struct CountdownRing: View {
     }
 
     func startCountdown() {
-        progress = 1
-        let step = 0.01 // Pequeno decremento a cada atualização
-        let interval = duration * step // Tempo de cada atualização
-        var accumulatedInterval: CGFloat = 0
-        
-        // Inicia o Timer de Metronome apenas uma vez
-        soundPlayer.playSound("Metronome")
-        
+        progress = 1.0
+        accumulatedInterval = 0
+        soundPlayer.playSound("Metronome") // Primeira batida
 
-        Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { timer in
-            accumulatedInterval += interval
-            if (accumulatedInterval >= 1 && !isPlay){
-                accumulatedInterval = 0
-                soundPlayer.playSound("Metronome")
-            }
-            if progress > 0 {
-                progress -= step
+        runCountdown()
+    }
+
+    func runCountdown() {
+        let step: CGFloat = 0.01 // Pequeno decremento progressivo
+        let interval: TimeInterval = duration * step // Tempo de cada atualização
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + interval) {
+            if self.progress > 0 {
+                withAnimation(.linear(duration: interval)) {
+                    self.progress -= step
+                }
+                
+                self.accumulatedInterval += interval
+                if self.accumulatedInterval >= 1 {
+                    self.accumulatedInterval = 0
+                    if !self.isPlay {
+                        self.soundPlayer.playSound("Metronome")
+                    }
+                }
+
+                self.runCountdown() // Chama recursivamente até terminar
             } else {
-                isPlay.toggle()
-                if isPlay {
-                    duration = 2
-                    color = .green
+                self.isPlay.toggle()
+                if self.isPlay {
+                    self.duration = 2
+                    self.color = .green
                 } else {
                     AppLibrary.Instance.currentIndex += 1
-                    duration = 3
-                    color = .blue
+                    self.duration = 3
+                    self.color = .blue
                 }
-                startCountdown()
-
-                timer.invalidate()
+                self.startCountdown()
             }
         }
     }
 }
 
-#Preview{
+#Preview {
     CountdownRing()
 }

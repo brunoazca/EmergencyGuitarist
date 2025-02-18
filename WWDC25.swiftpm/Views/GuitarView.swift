@@ -9,6 +9,8 @@ import Foundation
 import SwiftUI
 import SpriteKit
 
+var arview: ARSceneViewControllerRepresentable? = nil
+
 struct GuitarView: View{
     @ObservedObject var appRouter: AppRouter
     @State var startMetronome = false
@@ -16,8 +18,7 @@ struct GuitarView: View{
     var body: some View {
         ZStack{
             GeometryReader { geo in
-
-                ARSceneViewControllerRepresentable(size: geo.size, appRouter: appRouter)
+                makeARScene(size: geo.size, appRouter: appRouter)
 //                SpriteKitViewRepresentable(size: geo.size, appRouter: appRouter)
 //                       .frame(width: geo.size.width, height: geo.size.height)
 //                       .background(Color.clear)
@@ -25,18 +26,25 @@ struct GuitarView: View{
                 
             }.ignoresSafeArea()
            
-            VStack{
-                HStack{
-                    CountdownRing()
-                        .padding()
+            if(startMetronome){
+                VStack{
+                    HStack{
+                        CountdownRing()
+                            .padding()
+                        Spacer()
+                    }
                     Spacer()
                 }
-                Spacer()
             }
             
             GuitarLabelView(startMetronome: $startMetronome)
                
         }
+    }
+    func makeARScene(size: CGSize, appRouter: AppRouter)->ARSceneViewControllerRepresentable{
+        let arViewRep = arview ?? ARSceneViewControllerRepresentable(size: size, appRouter: appRouter)
+        arview = arViewRep
+        return arview!
     }
 }
 
