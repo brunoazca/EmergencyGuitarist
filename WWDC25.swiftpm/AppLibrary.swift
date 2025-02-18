@@ -17,7 +17,7 @@ class AppLibrary {
     
     var currentMessageIndex = 0
     let messages: [GuitarMessage] = [
-        GuitarMessage(text: "Place the iPad in front of you and step back a little so your upper body and head fit within the camera frame.", passMethod: .time),
+        GuitarMessage(text: "Place the iPad in front of you and step back a little so your upper body and head fit within the camera frame.", passMethod: .challenge),
         GuitarMessage(text: "Great! Now we are together! Hope I can count on you, hahaha", passMethod: .time),
         GuitarMessage(text:  "To play the guitar, you need to use both hands!", passMethod: .time),
         GuitarMessage(text: "With your left hand, you press the strings to define the note that will be played, depending on your fingers' place.", passMethod: .time),

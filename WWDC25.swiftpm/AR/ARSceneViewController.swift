@@ -201,7 +201,7 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
     func positionGuitar(frame: ARFrame) {
         
         // Definir os valores de deslocamento
-        let distanceToCamera: Float = 0.5
+        let distanceToCamera: Float = 0.8
         let leftOffset: Float = -0.5
         let downOffset: Float = 0.5
         
@@ -385,7 +385,7 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         let screenRatio = screenWidth / screenHeight
         let resRatio =  pixelBufferWidth / pixelBufferHeight
 //        let xFactor = 2*(0.39 + (0.8 / screenRatio))
-        let xFactor = 1.55
+        let xFactor = 1.5
 
         let yFactor = xFactor / resRatio
         let xCorrection = xFactor/2
@@ -508,6 +508,7 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
                 middleDebugNode.position = unprojectedFinger
             case .ring:
                 ringDebugNode.position = unprojectedFinger
+
         }
         
         if distance < 0.03 {
@@ -606,14 +607,21 @@ let shader = """
     float distToIndexDownMid = distance(fragPos, indexDownMid);
     float distToMiddleDownMid = distance(fragPos, middleDownMid);
     float distToRingDownMid = distance(fragPos, ringDownMid);
-    float maxD = 0.023/-_surface.position.z;
-    
+    float maxD = 0.23 + 0.1 * (_surface.position.z * _surface.position.z) + 0.29 * (_surface.position.z);
+    // -1 -> +- 0.04
+    // -0.9 -> +- 0.05
+    // -1.5 -> +- 0.02
+    //  0.1x2 + 0.29x + 0.23  
     // Se o fragmento estiver muito próximo de qualquer dedo, torná-lo transparente
     if (distToIndexTip < maxD || distToIndexDip < maxD || distToIndexPip < maxD || distToIndexMid < maxD || distToIndexDownMid < maxD || distToMiddleTip < maxD || distToMiddleDip < maxD || distToMiddlePip < maxD || distToMiddleMid < maxD || distToMiddleDownMid < maxD || distToRingTip < maxD || distToRingDip < maxD || distToRingPip < maxD || distToRingMid < maxD || distToRingDownMid < maxD) {
         _output.color.a = 0.0;  // Torna o fragmento transparente
     } else {
         _output.color.a = 1.0;  // Mantém o fragmento visível
     }
+    
+    //    if(_surface.position.z < -0.9 && _surface.position.z > -1.5) {
+    //        _output.color = float4(1.0, 0.0, 0.0, 1.0);
+    //    }
     
     """
 }

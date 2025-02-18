@@ -5,7 +5,9 @@ struct ContentView: View {
     var body: some View {
         ZStack{
             switch appRouter.router {
-            case .sceneView:
+            case .introScene:
+                IntroView(appRouter: appRouter)
+            case .arView:
                 GuitarView(appRouter: appRouter)
             }
         }.animation(.linear, value: appRouter.router)
@@ -13,10 +15,11 @@ struct ContentView: View {
 }
 
 enum Router{
-    case sceneView
+    case introScene
+    case arView
 }
 
 class AppRouter: ObservableObject {
-    @Published var router: Router = .sceneView
+    @Published var router: Router = .arView
 }
 
