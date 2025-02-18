@@ -16,14 +16,15 @@ class IntroSceneViewController: UIViewController, SCNPhysicsContactDelegate {
     @ObservedObject var appRouter: AppRouter
     
     let scene = SCNScene(named: "IntroScene.scn")!
-    let leftEyebrow = SCNScene(named: "IntroScene.scn")!.rootNode.childNode(withName: "EyebrowL", recursively: true)!
+    var leftEyebrow: SCNNode
     
     let scnView:SCNView
     
     init(size: CGSize, appRouter: AppRouter) {
         self.scnView = SCNView(frame: CGRect(origin: .zero, size: size))
+        leftEyebrow = scene.rootNode.childNode(withName: "EyebrowL", recursively: true)!
+
         self.appRouter = appRouter
-        
         super.init(nibName: nil, bundle: nil)
         self.view = self.scnView
         
@@ -44,11 +45,17 @@ class IntroSceneViewController: UIViewController, SCNPhysicsContactDelegate {
     }
     
     override func viewWillAppear(_ animated: Bool) {
-        print(self.leftEyebrow.position)
-        leftEyebrow.position = SCNVector3(x: 10, y: 0, z: 10)
-        leftEyebrow.runAction(SCNAction.sequence([SCNAction.move(by: SCNVector3(x: 100, y: 10, z: 100), duration: 3), SCNAction.run{_ in
-            print(self.leftEyebrow.position)
+        
 
-        }]))
+        leftEyebrow.isPaused = false
+        
+        print(self.leftEyebrow.position)
+        leftEyebrow.runAction(SCNAction.move(by: SCNVector3(x: 10, y: 10, z: 10), duration: 5))
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                                  print("Nova posição:", self.leftEyebrow.position)
+                              }
     }
+}
+#Preview {
+    IntroView(appRouter: AppRouter())
 }

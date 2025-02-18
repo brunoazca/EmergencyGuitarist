@@ -32,14 +32,12 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
     var canPlay = true
     
     let guitarNode = SCNScene(named: "modifiedGuitar.scn")!.rootNode
-    let leftPupil = SCNScene(named: "modifiedGuitar.scn")!.rootNode.childNode(withName: "PupilL", recursively: true)!
-    let rightPupil = SCNScene(named: "modifiedGuitar.scn")!.rootNode.childNode(withName: "PupilR", recursively: true)!
-
-    let trastes = SCNScene(named: "modifiedGuitar.scn")!.rootNode.childNode(withName: "Plane_006", recursively: true)!
-    let cordas1 = SCNScene(named: "modifiedGuitar.scn")!.rootNode.childNode(withName: "Cylinder_013", recursively: true)!
-    let cordas2 = SCNScene(named: "modifiedGuitar.scn")!.rootNode.childNode(withName: "Cylinder_014", recursively: true)!
-    let cordas3 = SCNScene(named: "modifiedGuitar.scn")!.rootNode.childNode(withName: "Cylinder_015", recursively: true)!
-
+    let leftPupil: SCNNode
+    let rightPupil: SCNNode
+    let trastes: SCNNode
+    let cordas1: SCNNode
+    let cordas2: SCNNode
+    let cordas3: SCNNode
 
     var shadableNodes: [SCNNode] = []
     
@@ -80,6 +78,13 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         self.appRouter = appRouter
         self.screenWidth = size.width
         self.screenHeight = size.height
+        trastes = guitarNode.childNode(withName: "Plane_006", recursively: true)!
+        cordas1 = guitarNode.childNode(withName: "Cylinder_013", recursively: true)!
+        cordas2 = guitarNode.childNode(withName: "Cylinder_014", recursively: true)!
+        cordas3 = guitarNode.childNode(withName: "Cylinder_015", recursively: true)!
+        leftPupil = guitarNode.childNode(withName: "PupilL", recursively: true)!
+        rightPupil = guitarNode.childNode(withName: "PupilR", recursively: true)!
+
         super.init(nibName: nil, bundle: nil)
         
         self.view = self.arView
