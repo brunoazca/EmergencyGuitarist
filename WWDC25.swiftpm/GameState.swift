@@ -27,9 +27,10 @@ class GameState: ObservableObject {
     
     @Published var inChordShape: Bool = false
     @Published var didPlayChord: Bool = false {didSet{
+        previousTimer?.invalidate()
         if(didPlayChord) {
             if(shouldPlay){
-                Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [self] timer in
+                previousTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [self] timer in
                     if (effectIntensity <= 50){
                         effectIntensity += 8
                     } else {
@@ -38,7 +39,7 @@ class GameState: ObservableObject {
                 }
             }
         } else {
-            Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [self] timer in
+            previousTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [self] timer in
                 if (effectIntensity >= 30){
                     effectIntensity -= 8
                 } else {
@@ -48,6 +49,7 @@ class GameState: ObservableObject {
         }
         print(effectIntensity)
     }}
+    var previousTimer: Timer? = nil
     @Published var effectIntensity: CGFloat = 30
     @Published var playMetronome: Bool = false
     @Published var shouldPlay = false

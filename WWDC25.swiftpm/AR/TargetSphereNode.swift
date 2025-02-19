@@ -11,7 +11,7 @@ import ARKit
 
 class TargetSphereNode: SCNNode {
     let finger: Finger
-    let color: UIColor
+    var color: UIColor
     var isTouched = false
     
     init(finger: Finger) {

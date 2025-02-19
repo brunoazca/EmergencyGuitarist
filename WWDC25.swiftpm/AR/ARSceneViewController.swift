@@ -159,6 +159,20 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         let middlePosition = chordScheme.childNode(withName: "middle", recursively: true)!
         let ringPosition = chordScheme.childNode(withName: "ring", recursively: true)!
         
+        indexSphere.color = UIColor(gameState.currentChordColor)
+        middleSphere.color = UIColor(gameState.currentChordColor)
+        ringSphere.color = UIColor(gameState.currentChordColor)
+        indexSphere.geometry?.materials.first?.diffuse.contents = UIColor(gameState.currentChordColor)
+        middleSphere.geometry?.materials.first?.diffuse.contents = UIColor(gameState.currentChordColor)
+        ringSphere.geometry?.materials.first?.diffuse.contents = UIColor(gameState.currentChordColor)
+        indexSphere.geometry?.materials.first?.emission.contents = UIColor(gameState.currentChordColor)
+        middleSphere.geometry?.materials.first?.emission.contents = UIColor(gameState.currentChordColor)
+        ringSphere.geometry?.materials.first?.emission.contents = UIColor(gameState.currentChordColor)
+
+        indexDebugNode.geometry?.materials.first?.diffuse.contents = UIColor(gameState.currentChordColor)
+        middleDebugNode.geometry?.materials.first?.diffuse.contents = UIColor(gameState.currentChordColor)
+        ringDebugNode.geometry?.materials.first?.diffuse.contents = UIColor(gameState.currentChordColor)
+        
         indexSphere.position = SCNVector3(
             x: indexPosition.worldPosition.x - guitarNode.worldPosition.x,
             y: indexPosition.worldPosition.y - guitarNode.worldPosition.y,
