@@ -13,7 +13,7 @@ struct GuitarLabelView: View {
     @State var showText = true
     @State private var currentIndex = 0 // Índice da letra atual
     @State private var timer: Timer? // Timer para controlar a digitação
-    @Binding var startMetronome: Bool
+    @ObservedObject var gameState: GameState
     
     var isIPad: Bool {
         UIDevice.current.userInterfaceIdiom == .pad
@@ -66,13 +66,13 @@ struct GuitarLabelView: View {
             } else {
                 switch currentMessage.passMethod {
                 case .aChord:
-                    AppLibrary.Instance.currentChord = .A
+                    gameState.currentChord = .A
                 case .cChord:
-                    AppLibrary.Instance.currentChord = .C
+                    gameState.currentChord = .C
                 case .eChord:
-                    AppLibrary.Instance.currentChord = .E
+                    gameState.currentChord = .E
                 case .challenge:
-                    AppLibrary.Instance.currentChord = .A
+                    gameState.currentChord = .A
                     default:
                         break
                 }
@@ -83,7 +83,7 @@ struct GuitarLabelView: View {
                         startTyping()
                     case .challenge:
                         showText = false
-                        startMetronome = true
+                        gameState.playMetronome = true
                     case .positionGuitar:
                         break
                     default:
@@ -99,5 +99,5 @@ struct GuitarLabelView: View {
 
 
 #Preview {
-    GuitarLabelView(startMetronome: .constant(false))
+    GuitarLabelView(gameState: GameState())
 }

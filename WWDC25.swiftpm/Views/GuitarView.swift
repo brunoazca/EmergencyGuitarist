@@ -14,35 +14,39 @@ var arview: ARSceneViewControllerRepresentable? = nil
 struct GuitarView: View{
     @ObservedObject var appRouter: AppRouter
     @State var startMetronome = false
+    @StateObject var gameState = GameState()
     
     var body: some View {
         ZStack{
             GeometryReader { geo in
-                makeARScene(size: geo.size, appRouter: appRouter)
+                makeARScene(size: geo.size, appRouter: appRouter, gameState: gameState)
 //                SpriteKitViewRepresentable(size: geo.size, appRouter: appRouter)
 //                       .frame(width: geo.size.width, height: geo.size.height)
 //                       .background(Color.clear)
 //                       .allowsHitTesting(true)
                 
             }.ignoresSafeArea()
-           
-            if(startMetronome){
+
+            EffectsView(gameState: gameState)
+            
+            if(gameState.playMetronome){
                 VStack{
                     HStack{
-                        CountdownRing()
-                            .padding()
+                        CountdownRing(gameState: gameState)
+                        ChordIndicator(gameState: gameState)
                         Spacer()
                     }
+                    .padding()
                     Spacer()
                 }
             }
             
-            GuitarLabelView(startMetronome: $startMetronome)
+            GuitarLabelView(gameState: gameState)
                
         }
     }
-    func makeARScene(size: CGSize, appRouter: AppRouter)->ARSceneViewControllerRepresentable{
-        let arViewRep = arview ?? ARSceneViewControllerRepresentable(size: size, appRouter: appRouter)
+    func makeARScene(size: CGSize, appRouter: AppRouter, gameState: GameState)->ARSceneViewControllerRepresentable{
+        let arViewRep = arview ?? ARSceneViewControllerRepresentable(size: size, appRouter: appRouter, gameState: gameState)
         arview = arViewRep
         return arview!
     }

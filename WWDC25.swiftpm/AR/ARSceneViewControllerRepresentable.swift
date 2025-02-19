@@ -13,8 +13,8 @@ import UIKit
 struct ARSceneViewControllerRepresentable: UIViewControllerRepresentable{
     let viewController:ARSceneViewController
     
-    init(size:CGSize, appRouter: AppRouter) {
-        viewController = ARSceneViewController(size: size, appRouter: appRouter)
+    init(size:CGSize, appRouter: AppRouter, gameState: GameState) {
+        viewController = ARSceneViewController(size: size, appRouter: appRouter, gameState: gameState)
     }
     
     func makeUIViewController(context: Context) -> ARSceneViewController {

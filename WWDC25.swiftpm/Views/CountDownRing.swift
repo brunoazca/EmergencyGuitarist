@@ -9,9 +9,8 @@ import SwiftUI
 struct CountdownRing: View {
     @State private var progress: CGFloat = 1.0 // Começa cheio
     @State private var duration: TimeInterval = 3 // Duração da animação
-    @State private var isPlay = false
-    @State private var color = Color.blue
     @State private var accumulatedInterval: CGFloat = 0
+    @ObservedObject var gameState: GameState
 
     var isIPad: Bool {
         UIDevice.current.userInterfaceIdiom == .pad
@@ -24,7 +23,7 @@ struct CountdownRing: View {
             RoundedRectangle(cornerRadius: 25.0)
                 .opacity(0.6)
                 .shadow(color: .black, radius: 30, x: 0, y: 0)
-                .frame(width: isIPad ? 220 : 110, height: isIPad ? 220 : 110)
+                .frame(width: isIPad ? 180 : 110, height: isIPad ? 180 : 110)
                 .overlay {
                     ZStack {
                         Canvas { context, size in
@@ -36,9 +35,9 @@ struct CountdownRing: View {
                             var path = Path()
                             path.addArc(center: center, radius: radius, startAngle: startAngle, endAngle: endAngle, clockwise: false)
 
-                            context.stroke(path, with: .color(color), lineWidth: isIPad ? 20 : 10)
+                            context.stroke(path, with: .color(gameState.currentChordColor.opacity(gameState.shouldPlay ? 1 : 0.5)), lineWidth: isIPad ? 20 : 10)
                         }
-                        if !isPlay {
+                        if !gameState.shouldPlay {
                             Text("\(Int(ceil(progress * duration)))")
                                 .foregroundStyle(.white)
                                 .font(.system(size: isIPad ? 50 : 25))
@@ -70,41 +69,49 @@ struct CountdownRing: View {
         let step: CGFloat = 0.01 // Pequeno decremento progressivo
         let interval: TimeInterval = duration * step // Tempo de cada atualização
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + interval) {
-            if self.progress > 0 {
-                withAnimation(.linear(duration: interval)) {
-                    self.progress -= step
-                }
+        DispatchQueue.global(qos: .userInitiated).async { // Rodando em uma thread separada
+            while self.progress > 0 {
+                let startTime = CFAbsoluteTimeGetCurrent() // Marca o tempo inicial
                 
+                DispatchQueue.main.async {
+                    withAnimation(.linear(duration: interval)) {
+                        self.progress -= step
+                    }
+                }
+
                 self.accumulatedInterval += interval
                 if self.accumulatedInterval >= 1 {
                     self.accumulatedInterval = 0
-                    if !self.isPlay {
+                    if !self.gameState.shouldPlay {
                         self.soundPlayer.playSound("Metronome")
                     }
                 }
 
-                self.runCountdown() // Chama recursivamente até terminar
-            } else {
-                self.isPlay.toggle()
-                if self.isPlay {
+                let elapsedTime = CFAbsoluteTimeGetCurrent() - startTime // Calcula o tempo decorrido
+                let sleepTime = max(0, interval - elapsedTime) // Ajusta para manter precisão
+                
+                usleep(useconds_t(sleepTime * 1_000_000)) // Aguarda sem sobrecarregar a CPU
+            }
+
+            DispatchQueue.main.async {
+                self.gameState.shouldPlay.toggle()
+                if self.gameState.shouldPlay {
                     self.duration = 2
-                    self.color = .green
                 } else {
                     AppLibrary.Instance.currentChordIndex += 1
                     if AppLibrary.Instance.chordSequence.count <= AppLibrary.Instance.currentChordIndex {
                         AppLibrary.Instance.currentChordIndex = 0
                     }
-                    AppLibrary.Instance.currentChord = AppLibrary.Instance.chordSequence[AppLibrary.Instance.currentChordIndex]
+                    gameState.currentChord = AppLibrary.Instance.chordSequence[AppLibrary.Instance.currentChordIndex]
                     self.duration = 3
-                    self.color = .blue
                 }
                 self.startCountdown()
             }
         }
     }
+
 }
 
 #Preview {
-    CountdownRing()
+    CountdownRing(gameState: GameState())
 }

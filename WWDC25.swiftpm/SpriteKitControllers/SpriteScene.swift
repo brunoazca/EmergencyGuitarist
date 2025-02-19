@@ -67,7 +67,7 @@ class SpriteScene: SKScene {
     }
     
     func addChildChord(node: SKNode){
-        let chordLabel = SKLabelNode(text: AppLibrary.Instance.currentChord?.rawValue)
+        let chordLabel = SKLabelNode(text: "A")
         chordLabel.fontSize = metronomeNode.frame.height
         chordLabel.position = CGPoint(x:node.frame.width/2, y: chordLabel.frame.height + node.frame.height/2)
         node.addChild(chordLabel)

@@ -14,6 +14,7 @@ import simd
 class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate{
     var arView: ARSCNView
     @ObservedObject var appRouter: AppRouter
+    @ObservedObject var gameState: GameState
     
     let screenWidth: CGFloat
     let screenHeight: CGFloat
@@ -73,9 +74,10 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         return debugNode
     }()
     
-    init(size: CGSize, appRouter: AppRouter) {
+    init(size: CGSize, appRouter: AppRouter, gameState: GameState) {
         self.arView = ARSCNView(frame: CGRect(origin: .zero, size: size))
         self.appRouter = appRouter
+        self.gameState = gameState
         self.screenWidth = size.width
         self.screenHeight = size.height
         trastes = guitarNode.childNode(withName: "Plane_006", recursively: true)!
@@ -190,13 +192,19 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
             positionGuitar(frame: frame)
         }
         
-        currentChord = AppLibrary.Instance.currentChord
+        currentChord = gameState.currentChord
         
         if let currentChord {
             if (currentChord != lastChord){
                 print("Mudou o acorde")
                 setCurrentChord(currentChord)
             }
+        }
+        
+        if (indexSphere.isTouched && middleSphere.isTouched && ringSphere.isTouched){
+            gameState.inChordShape = true
+        } else {
+            gameState.inChordShape = false
         }
         
         lastChord = currentChord
@@ -296,12 +304,14 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
                         if let chord = currentChord {
                             if (indexSphere.isTouched && middleSphere.isTouched && ringSphere.isTouched){
                                 if canPlay {
+                                    gameState.didPlayChord = true
                                     soundPlayer.playChord(chord)
                                     canPlay = false  // Bloqueia a execução
 
                                     // Define um cooldown de 0.5 segundos antes de permitir outra execução
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                                        self.canPlay = true
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [self] in
+                                        gameState.didPlayChord = false
+                                        canPlay = true
                                     }
                                 }
                             } else {
