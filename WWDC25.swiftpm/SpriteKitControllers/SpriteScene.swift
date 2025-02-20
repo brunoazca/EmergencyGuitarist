@@ -71,7 +71,7 @@ class SpriteScene: SKScene {
         chordLabel.fontSize = metronomeNode.frame.height
         chordLabel.position = CGPoint(x:node.frame.width/2, y: chordLabel.frame.height + node.frame.height/2)
         node.addChild(chordLabel)
-        AppLibrary.Instance.currentChordIndex += 1
+//        AppLibrary.Instance.currentChordIndex += 1
     }
     
     override func sceneDidLoad() {

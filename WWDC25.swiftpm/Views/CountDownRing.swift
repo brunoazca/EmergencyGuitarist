@@ -53,6 +53,8 @@ struct CountdownRing: View {
                 }
         }
         .onAppear {
+            gameState.shouldPlay = false
+
             startCountdown()
         }
     }
@@ -61,7 +63,6 @@ struct CountdownRing: View {
         progress = 1.0
         accumulatedInterval = 0
         soundPlayer.playSound("Metronome") // Primeira batida
-
         runCountdown()
     }
 
@@ -98,11 +99,10 @@ struct CountdownRing: View {
                 if self.gameState.shouldPlay {
                     self.duration = 2
                 } else {
-                    AppLibrary.Instance.currentChordIndex += 1
-                    if AppLibrary.Instance.chordSequence.count <= AppLibrary.Instance.currentChordIndex {
-                        AppLibrary.Instance.currentChordIndex = 0
+                    gameState.currentChordIndex += 1
+                    if gameState.currentChordIndex + 1 <= gameState.chordSequence.count{
+                        gameState.currentChord = gameState.chordSequence[gameState.currentChordIndex]
                     }
-                    gameState.currentChord = AppLibrary.Instance.chordSequence[AppLibrary.Instance.currentChordIndex]
                     self.duration = 3
                 }
                 self.startCountdown()

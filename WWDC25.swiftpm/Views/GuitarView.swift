@@ -29,17 +29,21 @@ struct GuitarView: View{
 
             EffectsView(gameState: gameState)
             
-            if(gameState.playMetronome){
-                VStack{
-                    HStack{
+            
+            VStack{
+                HStack{
+                    if(gameState.showMetronome){
                         CountdownRing(gameState: gameState)
-                        ChordIndicator(gameState: gameState)
-                        Spacer()
                     }
-                    .padding()
+                    if(gameState.showChordIndicator){
+                        ChordIndicator(gameState: gameState)
+                    }
                     Spacer()
                 }
+                .padding()
+                Spacer()
             }
+            
             
             GuitarLabelView(gameState: gameState)
                

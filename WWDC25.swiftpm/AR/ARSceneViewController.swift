@@ -35,6 +35,8 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
     let guitarNode = SCNScene(named: "modifiedGuitar.scn")!.rootNode
     let leftPupil: SCNNode
     let rightPupil: SCNNode
+    let leftEyeBase: SCNNode
+    let rightEyeBase: SCNNode
     let trastes: SCNNode
     let cordas1: SCNNode
     let cordas2: SCNNode
@@ -86,6 +88,9 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         cordas3 = guitarNode.childNode(withName: "Cylinder_015", recursively: true)!
         leftPupil = guitarNode.childNode(withName: "PupilL", recursively: true)!
         rightPupil = guitarNode.childNode(withName: "PupilR", recursively: true)!
+        leftEyeBase = guitarNode.childNode(withName: "EyeBaseL", recursively: true)!
+        rightEyeBase = guitarNode.childNode(withName: "EyeBaseR", recursively: true)!
+
 
         super.init(nibName: nil, bundle: nil)
         
@@ -159,9 +164,6 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         let middlePosition = chordScheme.childNode(withName: "middle", recursively: true)!
         let ringPosition = chordScheme.childNode(withName: "ring", recursively: true)!
         
-        indexSphere.color = UIColor(gameState.currentChordColor)
-        middleSphere.color = UIColor(gameState.currentChordColor)
-        ringSphere.color = UIColor(gameState.currentChordColor)
         indexSphere.geometry?.materials.first?.diffuse.contents = UIColor(gameState.currentChordColor)
         middleSphere.geometry?.materials.first?.diffuse.contents = UIColor(gameState.currentChordColor)
         ringSphere.geometry?.materials.first?.diffuse.contents = UIColor(gameState.currentChordColor)
@@ -554,28 +556,51 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
             fingerTarget.isTouched = false
         }
         
-//        if (finger == .index) {
-//            animateEyes(indexTipPos: unprojectedFinger)
-//        }
+        if (finger == .index) {
+            animateEyes(indexTipPos: unprojectedFinger)
+        }
     }
-//    
-//    func animateEyes(indexTipPos: SCNVector3){
-//        let leftPupilWorldTransform = leftPupil.presentation.worldTransform
-//        let leftPupilPos = guitarNode.worldPosition
-//        
-//        let distance = SCNVector3(x: indexTipPos.x - leftPupilPos.x, y: indexTipPos.y - leftPupilPos.y, z: indexTipPos.z - leftPupilPos.z)
-//        
-//        let normalizedDistance = distance.normalized()
-//
-//        let eyeBounds = SCNVector3(x: 100, y: 100, z: 0)
-//        let movement = SCNVector3(normalizedDistance.x * eyeBounds.x,
-//                                  normalizedDistance.y * eyeBounds.y,
-//                                  normalizedDistance.z * eyeBounds.z)
-//
-//        leftPupil.worldPosition = SCNVector3(x: movement.x, y: movement.y, z: movement.z)
-//        print(leftPupil.position)
-//
-//    }
+    
+    func animateEyes(indexTipPos: SCNVector3) {
+        let leftPupilPos = leftPupil.worldPosition
+        let rightPupilPos = rightPupil.worldPosition
+        
+        let moveFactor: Float = 0.01
+        let maxDistance: Float = 0.02  // Limite de movimento das pupilas
+        
+        // Calcula a direção normalizada e ajusta a intensidade do movimento
+        let leftDirection = (indexTipPos - leftPupilPos).normalized() * moveFactor
+        let rightDirection = (indexTipPos - rightPupilPos).normalized() * moveFactor
+        
+        // Calcula a nova posição da pupila (mantendo z fixo)
+        var newLeftPos = leftPupilPos + SCNVector3(x: leftDirection.x, y: leftDirection.y, z: 0)
+        var newRightPos = rightPupilPos + SCNVector3(x: rightDirection.x, y: rightDirection.y, z: 0)
+        
+        // Vetores das pupilas para a base dos olhos
+        let leftVector = newLeftPos - leftEyeBase.worldPosition
+        let rightVector = newRightPos - rightEyeBase.worldPosition
+
+        let leftDistance = leftVector.length
+        let rightDistance = rightVector.length
+
+        // Se a nova posição estiver além do limite, ajustamos para permanecer dentro do círculo
+        if leftDistance > maxDistance {
+            newLeftPos = leftEyeBase.worldPosition + leftVector.normalized() * maxDistance
+        }
+        if rightDistance > maxDistance {
+            newRightPos = rightEyeBase.worldPosition + rightVector.normalized() * maxDistance
+        }
+
+        // Criar animação suave para os olhos
+        SCNTransaction.begin()
+        SCNTransaction.animationDuration = 0.2  // Diminui um pouco a duração para mais responsividade
+        leftPupil.worldPosition = newLeftPos
+        rightPupil.worldPosition = newRightPos
+        SCNTransaction.commit()
+    }
+
+
+
     
     func applyShader(to node: SCNNode) {
         guard let material = node.geometry?.firstMaterial else {
@@ -659,20 +684,6 @@ enum Finger {
     case index
     case middle
     case ring
-}
-
-extension SCNVector3 {
-    /// Retorna o vetor normalizado (magnitude = 1)
-    func normalized() -> SCNVector3 {
-        let length = sqrt(x * x + y * y + z * z)
-        guard length != 0 else { return self } // Evita divisão por zero
-        return SCNVector3(x / length, y / length, z / length)
-    }
-    
-    /// Normaliza o próprio vetor (modifica a instância)
-    mutating func normalize() {
-        self = self.normalized()
-    }
 }
 
 #Preview {

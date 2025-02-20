@@ -15,8 +15,10 @@ struct GuitarMessage {
         case time
         case positionGuitar
         case aChord
+        case playChord
         case cChord
         case eChord
         case challenge
+        case show
     }
 }
