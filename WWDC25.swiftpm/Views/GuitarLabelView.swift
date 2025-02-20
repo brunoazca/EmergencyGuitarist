@@ -33,6 +33,7 @@ struct GuitarLabelView: View {
                                 if(gameState.currentMessageIndex <= 0){
                                     gameState.startTyping()
                                 }
+                        
                             }
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, isIPad ? 120 : 50)

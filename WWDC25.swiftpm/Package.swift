@@ -17,7 +17,7 @@ let package = Package(
             name: "WWDC25",
             targets: ["AppModule"],
             bundleIdentifier: "brunoazca.WWDC25",
-            teamIdentifier: "25V85HB523",
+            teamIdentifier: "67AYPRFZH8",
             displayVersion: "1.0",
             bundleVersion: "1",
             appIcon: .placeholder(icon: .carrot),

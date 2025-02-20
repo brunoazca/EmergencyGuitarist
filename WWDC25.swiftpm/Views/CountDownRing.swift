@@ -22,6 +22,7 @@ struct CountdownRing: View {
         ZStack {
             RoundedRectangle(cornerRadius: 25.0)
                 .opacity(0.6)
+                .foregroundStyle(.black)
                 .shadow(color: .black, radius: 30, x: 0, y: 0)
                 .frame(width: isIPad ? 180 : 110, height: isIPad ? 180 : 110)
                 .overlay {

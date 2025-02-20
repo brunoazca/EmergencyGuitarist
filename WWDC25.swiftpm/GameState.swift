@@ -9,7 +9,9 @@ import Foundation
 import SwiftUI
 
 class GameState: ObservableObject {
-    @Published var currentChord: SoundPlayer.Chord? = nil
+    @Published var currentChord: SoundPlayer.Chord? = nil {didSet{
+        print(currentChord)
+    }}
     var currentChordColor: Color {
         switch currentChord {
         case .A:
@@ -27,8 +29,6 @@ class GameState: ObservableObject {
     
     @Published var inChordShape: Bool = false {didSet{
         if (inChordShape && currentMessage.passMethod == .aChord){
-            showChordIndicator = false
-            showMetronome = false
             startTyping()
         }
     }}
@@ -70,6 +70,7 @@ class GameState: ObservableObject {
     
     let chordSequence: [SoundPlayer.Chord] = [.A,.C,.E,.A,.C,.E]
     @Published var currentChordIndex: Int = 0 { didSet{
+        print(currentChordIndex)
         if(currentChordIndex + 1 == chordSequence.count + 1){
             startTyping()
         }
@@ -111,8 +112,6 @@ class GameState: ObservableObject {
                     currentChord = .C
                 case .eChord:
                     currentChord = .E
-                case .challenge:
-                    currentChord = .A
                 default:
                     break
                 }
@@ -124,6 +123,7 @@ class GameState: ObservableObject {
                         startTyping()
                     case .challenge:
                         showText = false
+                        currentChord = .A
                         showChordIndicator = true
                         showMetronome = true
                     case .positionGuitar:
@@ -132,7 +132,8 @@ class GameState: ObservableObject {
                         break
                     }
                 }
-                timer?.invalidate()
+                timer!.invalidate()
+                timer = nil
             }
         }
     }

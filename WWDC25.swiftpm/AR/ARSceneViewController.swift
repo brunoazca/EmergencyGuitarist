@@ -125,7 +125,7 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         let configuration = ARFaceTrackingConfiguration()
 
         // Permite usar iluminação adaptativa
-        arView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+        arView.session.run(configuration)
 
 
         arView.scene.rootNode.addChildNode(indexDebugNode)
@@ -412,11 +412,11 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
     func calculatePositionForShader(fingerPos: VNRecognizedPoint) -> CGPoint{
 //        let xFactor = 2*screenWidth/1000
 //        let yFactor = 2*screenHeight/1000
-        
         let screenRatio = screenWidth / screenHeight
         let resRatio =  pixelBufferWidth / pixelBufferHeight
-//        let xFactor = 2*(0.39 + (0.8 / screenRatio))
-        let xFactor = 1.5
+        let xFactor = -0.8393*resRatio + 2.6188
+
+//        let xFactor = 1.5
 
         let yFactor = xFactor / resRatio
         let xCorrection = xFactor/2
@@ -425,6 +425,7 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
 
         //iphone: 852 x 393; resolution: 1440 x 1080
         //ipad: 1080 x 810; resolution: 1280.0 X 720.0
+        //ipad Clara: rw: 1.4390243902439024; rr: 1.3333333333333333 -> xF = 1.5
         //ratio width 2.16
         //ratio resolution 1.333
         //r/r = 1.6 -> scale
@@ -432,7 +433,7 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         //0 a 850 -> -0.78 a 0.78 (1.55)
         //0 a 390 -> -0.6 a 0.6 (1.2)
 //        Para iphone:
-//        return CGPoint(x: 1.55 * fingerPos.location.x - 0.775, y: 1.2 * fingerPos.location.y - 0.6)
+//        return CGPoint(x: 1.5 * fingerPos.location.x - 0.775, y: 1.2 * fingerPos.location.y - 0.6)
 //        Para iPad:
 //        return CGPoint(x: 1.15 * fingerPos.location.x - 0.575, y: 0.675 * fingerPos.location.y - 0.3375)
         
