@@ -101,8 +101,8 @@ struct CountdownRing: View {
                     self.duration = 2
                 } else {
                     gameState.currentChordIndex += 1
-                    if gameState.currentChordIndex + 1 <= gameState.chordSequence.count{
-                        gameState.currentChord = gameState.chordSequence[gameState.currentChordIndex]
+                    if gameState.currentChordIndex + 1 <= gameState.challengeChordSequence.count{
+                        gameState.currentChord = gameState.challengeChordSequence[gameState.currentChordIndex]
                     }
                     self.duration = 3
                 }

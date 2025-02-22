@@ -16,8 +16,8 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
     @ObservedObject var appRouter: AppRouter
     @ObservedObject var gameState: GameState
     
-    let screenWidth: CGFloat
-    let screenHeight: CGFloat
+    var screenWidth: CGFloat
+    var screenHeight: CGFloat
     var pixelBufferWidth: CGFloat = 0
     var pixelBufferHeight: CGFloat = 0
     var screenRatio: CGFloat = 0
@@ -125,7 +125,7 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         let configuration = ARFaceTrackingConfiguration()
 
         // Permite usar iluminação adaptativa
-        arView.session.run(configuration)
+        arView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
 
 
         arView.scene.rootNode.addChildNode(indexDebugNode)
@@ -148,9 +148,17 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         fatalError("init(coder:) has not been implemented")
     }
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
+    override func viewWillTransition(to size: CGSize, with coordinator: any UIViewControllerTransitionCoordinator) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5){ [self] in
+            self.resetARSession()
+            screenWidth = view.frame.width
+            screenHeight = view.frame.height
+            screenRatio = 0
+        }
+
     }
+    
+    
     
     func setCurrentChord(_ chord: SoundPlayer.Chord){
         currentChord = chord
@@ -208,6 +216,9 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
             positionGuitar(frame: frame)
         }
         
+        if frameCounter % 500 == 0 {
+            resetARSession()
+        }
         currentChord = gameState.currentChord
         
         if let currentChord {
@@ -224,6 +235,15 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         }
         
         lastChord = currentChord
+    }
+    
+    func resetARSession() {
+        // Obtém a configuração atual
+        print("Reseting session")
+        let configuration = ARFaceTrackingConfiguration()
+        
+        // Reinicia a sessão AR com rastreamento resetado
+        arView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
     }
     
     // Método para posicionar o violão com base na face (câmera frontal)

@@ -9,9 +9,7 @@ import Foundation
 import SwiftUI
 
 class GameState: ObservableObject {
-    @Published var currentChord: SoundPlayer.Chord? = nil {didSet{
-        print(currentChord)
-    }}
+    @Published var currentChord: SoundPlayer.Chord? = nil
     var currentChordColor: Color {
         switch currentChord {
         case .A:
@@ -68,11 +66,14 @@ class GameState: ObservableObject {
     @Published var typedText = ""
     @Published var showText = true
     
-    let chordSequence: [SoundPlayer.Chord] = [.A,.C,.E,.A,.C,.E]
+    let showChordSequence: [SoundPlayer.Chord] = [.A,.C,.E,.A,.C,.E]
+    let challengeChordSequence: [SoundPlayer.Chord] = [.A,.C,.E,.A,.C,.E]
     @Published var currentChordIndex: Int = 0 { didSet{
         print(currentChordIndex)
-        if(currentChordIndex + 1 == chordSequence.count + 1){
+        if(currentChordIndex + 1 == challengeChordSequence.count + 1){
             startTyping()
+            showMetronome = false
+            showChordIndicator = false
         }
     }}
     
@@ -89,12 +90,54 @@ class GameState: ObservableObject {
     var currentMessageText: String {
         currentMessage.text
     }
+    var endedTyping = false {didSet{
+        if(endedTyping){
+            print("a")
+            if let timer{
+                timer.invalidate()
+            }
+            let thisCurrentMessage = currentMessage
+            switch currentMessage.passMethod {
+            case .aChord:
+                currentChord = .A
+                showChordIndicator = true
+            case .cChord:
+                currentChord = .C
+            case .eChord:
+                currentChord = .E
+            default:
+                break
+            }
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 4){ [self] in
+
+                switch thisCurrentMessage.passMethod {
+                case .time:
+                    startTyping()
+                case .challenge:
+                    showText = false
+                    currentChord = .A
+                    showChordIndicator = true
+                    showMetronome = true
+                    if let timer{
+                        timer.invalidate()
+                    }
+
+                case .positionGuitar:
+                    break
+                default:
+                    break
+                }
+            }
+        }
+    }}
     
     func startTyping() {
         typedText = ""
         currentMessageIndex += 1
         currentIndex = 0
         showText = true
+        endedTyping = false
 
         // Cria um timer que vai "digitar" o texto aos poucos
         timer = Timer.scheduledTimer(withTimeInterval: 0.04, repeats: true) { [self] _ in
@@ -103,37 +146,9 @@ class GameState: ObservableObject {
                 currentIndex += 1
 
             } else {
-                let thisCurrentMessage = currentMessage
-                switch currentMessage.passMethod {
-                case .aChord:
-                    currentChord = .A
-                    showChordIndicator = true
-                case .cChord:
-                    currentChord = .C
-                case .eChord:
-                    currentChord = .E
-                default:
-                    break
+                if(!endedTyping){
+                    endedTyping = true
                 }
-
-                DispatchQueue.main.asyncAfter(deadline: .now() + 4){ [self] in
-
-                    switch thisCurrentMessage.passMethod {
-                    case .time:
-                        startTyping()
-                    case .challenge:
-                        showText = false
-                        currentChord = .A
-                        showChordIndicator = true
-                        showMetronome = true
-                    case .positionGuitar:
-                        break
-                    default:
-                        break
-                    }
-                }
-                timer!.invalidate()
-                timer = nil
             }
         }
     }
