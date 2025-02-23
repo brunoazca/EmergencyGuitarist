@@ -165,28 +165,38 @@ class IntroSceneViewController: UIViewController, SCNPhysicsContactDelegate, SCN
         typedText = ""
         currentIndex = 0
         
-        timer = Timer.scheduledTimer(withTimeInterval: 0.04, repeats: true) { [self] _ in
-            print("D")
-
+        // Função recursiva para simular o comportamento do timer
+        func typeNextCharacter() {
+            // Verifica se ainda há caracteres para adicionar
             if currentIndex < messages[messageIndex].count {
+                // Adiciona o próximo caractere
                 typedText += String(messages[messageIndex][messages[messageIndex].index(messages[messageIndex].startIndex, offsetBy: currentIndex)])
                 currentIndex += 1
                 textNode.string = typedText
+                
+                // Chama o próximo caractere após o intervalo de tempo
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.04) {
+                    typeNextCharacter()
+                }
             } else {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 4){ [self] in
-                    if (messageIndex + 1 == messages.count) {
+                // Se a digitação estiver completa, inicia o próximo processo após o atraso de 4 segundos
+                DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [self] in
+                    if messageIndex + 1 == messages.count {
                         appRouter.router = .arView
-                    } else{
+                    } else {
                         messageIndex += 1
                         typedText = ""
                         startTyping()
                         speakAnimation()
                     }
                 }
-                timer?.invalidate()
             }
         }
+        
+        // Inicia a digitação
+        typeNextCharacter()
     }
+
     
     func speakAnimation(){
         rightEyebrow.runAction(eyeBrowAnimation(isRight: true))
@@ -258,7 +268,6 @@ class IntroSceneViewController: UIViewController, SCNPhysicsContactDelegate, SCN
 
                         textBubble.isHidden = false
                         textBubbleArrow.isHidden = false
-                        
                         startTyping()
                         speakAnimation()
                     }
