@@ -92,7 +92,6 @@ class GameState: ObservableObject {
     }
     var endedTyping = false {didSet{
         if(endedTyping){
-            print("a")
             if let timer{
                 timer.invalidate()
             }

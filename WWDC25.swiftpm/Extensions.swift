@@ -6,7 +6,6 @@
 //
 
 import Foundation
-
 import SceneKit
 
 extension SCNVector3 {
@@ -20,7 +19,7 @@ extension SCNVector3 {
         return SCNVector3(left.x - right.x, left.y - right.y, left.z - right.z)
     }
     
-    // Multiplicação por um escalar (para ajustar a intensidade do movimento)
+    // Multiplicação por um escalar
     static func *(vector: SCNVector3, scalar: Float) -> SCNVector3 {
         return SCNVector3(vector.x * scalar, vector.y * scalar, vector.z * scalar)
     }
@@ -33,5 +32,10 @@ extension SCNVector3 {
     // Normalizar um vetor (magnitude = 1)
     func normalized() -> SCNVector3 {
         return length > 0 ? self * (1 / length) : SCNVector3(0, 0, 0)
+    }
+
+    // Distância entre dois vetores (pontos no espaço 3D)
+    func distance(to vector: SCNVector3) -> Float {
+        return (self - vector).length
     }
 }
