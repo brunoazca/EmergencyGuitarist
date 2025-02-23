@@ -708,5 +708,5 @@ enum Finger {
 }
 
 #Preview {
-    GuitarView(appRouter: AppRouter())
+    GuitarView(appRouter: AppRouter(), gameState: GameState())
 }

@@ -14,7 +14,8 @@ var arview: ARSceneViewControllerRepresentable? = nil
 struct GuitarView: View{
     @ObservedObject var appRouter: AppRouter
     @State var startMetronome = false
-    @StateObject var gameState = GameState()
+    @ObservedObject var gameState: GameState
+    
     
     var body: some View {
         ZStack{
@@ -42,11 +43,12 @@ struct GuitarView: View{
                 }
                 .padding()
                 Spacer()
-            }
+            }.animation(.default)
             
             
             GuitarLabelView(gameState: gameState)
-               
+        }.onAppear{
+            gameState.appRouter = appRouter
         }
     }
     func makeARScene(size: CGSize, appRouter: AppRouter, gameState: GameState)->ARSceneViewControllerRepresentable{
@@ -57,7 +59,7 @@ struct GuitarView: View{
 }
 
 #Preview {
-    GuitarView(appRouter: AppRouter())
+    GuitarView(appRouter: AppRouter(), gameState: GameState())
 }
     
 

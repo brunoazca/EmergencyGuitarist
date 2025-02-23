@@ -9,6 +9,9 @@ import Foundation
 import SwiftUI
 
 class GameState: ObservableObject {
+    @ObservedObject var appRouter: AppRouter = AppRouter()
+    
+    var isInShow = false
     @Published var currentChord: SoundPlayer.Chord? = nil
     var currentChordColor: Color {
         switch currentChord {
@@ -66,14 +69,20 @@ class GameState: ObservableObject {
     @Published var typedText = ""
     @Published var showText = true
     
-    let showChordSequence: [SoundPlayer.Chord] = [.A,.C,.E,.A,.C,.E]
-    let challengeChordSequence: [SoundPlayer.Chord] = [.A,.C,.E,.A,.C,.E]
+    var challengeChordSequence: [SoundPlayer.Chord] = [.A,.C,.E,.A,.C,.E]
+    
     @Published var currentChordIndex: Int = 0 { didSet{
-        print(currentChordIndex)
         if(currentChordIndex + 1 == challengeChordSequence.count + 1){
-            startTyping()
+            if(!isInShow){
+                startTyping()
+                showMetronome = false
+                showChordIndicator = false
+            } else {
+                appRouter.router = .finalScene
+            }
             showMetronome = false
             showChordIndicator = false
+            
         }
     }}
     
@@ -124,6 +133,14 @@ class GameState: ObservableObject {
 
                 case .positionGuitar:
                     break
+                case .show:
+                    appRouter.router = .showIntro
+                    showText = false
+                    showChordIndicator = false
+                    showMetronome = false
+                    challengeChordSequence = [.C, .C, .E, .E]
+                    currentChordIndex = 0
+                    isInShow = true
                 default:
                     break
                 }

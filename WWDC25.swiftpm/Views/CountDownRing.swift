@@ -106,7 +106,9 @@ struct CountdownRing: View {
                     }
                     self.duration = 3
                 }
-                self.startCountdown()
+                if(gameState.showMetronome){
+                    self.startCountdown()
+                }
             }
         }
     }

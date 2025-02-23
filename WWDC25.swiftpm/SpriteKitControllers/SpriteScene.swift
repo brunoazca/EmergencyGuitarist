@@ -101,5 +101,5 @@ class SpriteScene: SKScene {
 }
 
 #Preview {
-    GuitarView(appRouter: AppRouter())
+    GuitarView(appRouter: AppRouter(), gameState: GameState())
 }
