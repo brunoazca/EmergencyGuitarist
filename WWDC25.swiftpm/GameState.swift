@@ -10,7 +10,7 @@ import SwiftUI
 
 class GameState: ObservableObject {
     @ObservedObject var appRouter: AppRouter = AppRouter()
-    
+    var soundPlayer = SoundPlayer()
     var isInShow = false
     @Published var currentChord: SoundPlayer.Chord? = nil
     var currentChordColor: Color {
@@ -179,9 +179,7 @@ class GameState: ObservableObject {
                     showArrow = true
 
                     if let timer{
-                        if(timer.isValid){
-                            timer.invalidate()
-                        }
+                        timer.invalidate()
                     }
 
                 case .show:
@@ -225,6 +223,49 @@ class GameState: ObservableObject {
             }
         }
     }
+    
+    @Published var progress: CGFloat = 1
+    @Published var progressAtualizer: Int = 10
+    @Published var duration: TimeInterval = 3
+    var metronomeTimer: Timer? = nil
+    @Published var metronomeSpeed = (0.53*2)
+    
+    func startCountdown() {
+        progress = 1.0
+        runCountdown()
+    }
+
+    func runCountdown() {
+        metronomeTimer = Timer.scheduledTimer(withTimeInterval: metronomeSpeed/10, repeats: true) { [self] _ in
+            progress -= (metronomeSpeed/10)/duration
+            
+            if(progressAtualizer % 10 == 0){
+                self.soundPlayer.playSound("Metronome")
+            }
+            progressAtualizer += 1
+
+            if(progress <= 0) {
+                progress = 1
+                self.shouldPlay.toggle()
+                if self.shouldPlay {
+                    if(!isInShow){
+                        self.duration = 2
+                    } else {
+                        self.duration = 1.25
+                    }
+                } else {
+                    currentChordIndex += 1
+                    if currentChordIndex + 1 <= challengeChordSequence.count{
+                        currentChord = challengeChordSequence[currentChordIndex]
+                    } else {
+                        metronomeTimer?.invalidate()
+                    }
+                    self.duration = 3
+                }
+            }
+        }
+    }
+    
     func reset() {
         isInShow = false
         currentChord = nil
@@ -247,7 +288,10 @@ class GameState: ObservableObject {
         
         previousTask?.cancel() // Cancela qualquer tarefa pendente
         previousTask = nil
-        
+        metronomeTimer?.invalidate()
+        progressAtualizer = 10
+        progress = 1
+        metronomeTimer = nil
         timer?.invalidate() // Para o timer, se estiver rodando
         timer = nil
     }
