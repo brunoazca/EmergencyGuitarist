@@ -34,7 +34,11 @@ struct GuitarView: View{
             VStack{
                 HStack{
                     if(gameState.showMetronome){
-                        CountdownRing(gameState: gameState)
+                        if(gameState.isInShow){
+                            CountdownRing(gameState: gameState)
+                        } else {
+                            TutorialCountdownRing(gameState: gameState)
+                        }
                     }
                     if(gameState.showChordIndicator){
                         ChordIndicator(gameState: gameState)
