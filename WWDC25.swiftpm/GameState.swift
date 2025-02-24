@@ -229,43 +229,59 @@ class GameState: ObservableObject {
     @Published var duration: TimeInterval = 3
     var metronomeTimer: Timer? = nil
     @Published var metronomeSpeed = (0.53*2)
-    
+    var countdownCanceled = false
+
     func startCountdown() {
         progress = 1.0
         runCountdown()
     }
 
     func runCountdown() {
-        metronomeTimer = Timer.scheduledTimer(withTimeInterval: metronomeSpeed/10, repeats: true) { [self] _ in
-            progress -= (metronomeSpeed/10)/duration
-            
-            if(progressAtualizer % 10 == 0){
-                self.soundPlayer.playSound("Metronome")
-            }
-            progressAtualizer += 1
+        countdownCanceled = false
+        DispatchQueue.global(qos: .userInteractive).async { [self] in
+            while progress > 0 && !countdownCanceled {
+                DispatchQueue.main.async { [self] in
+                    progress -= (metronomeSpeed/10)/duration
 
-            if(progress <= 0) {
-                progress = 1
-                self.shouldPlay.toggle()
-                if self.shouldPlay {
-                    if(!isInShow){
-                        self.duration = 2
-                    } else {
-                        self.duration = 1.25
+                    if progressAtualizer % 10 == 0 {
+                        self.soundPlayer.playSound("Metronome")
                     }
-                } else {
-                    currentChordIndex += 1
-                    if currentChordIndex + 1 <= challengeChordSequence.count{
-                        currentChord = challengeChordSequence[currentChordIndex]
-                    } else {
-                        metronomeTimer?.invalidate()
+
+                    progressAtualizer += 1
+
+                    if progress <= 0 {
+                        progress = 1
+                        self.shouldPlay.toggle()
+
+                        if self.shouldPlay {
+                            if !isInShow {
+                                self.duration = 2
+                            } else {
+                                self.duration = 1.25
+                            }
+                        } else {
+                            currentChordIndex += 1
+                            if currentChordIndex + 1 <= challengeChordSequence.count {
+                                currentChord = challengeChordSequence[currentChordIndex]
+                            } else {
+                                countdownCanceled = true
+                            }
+                            self.duration = 3
+                        }
                     }
-                    self.duration = 3
                 }
+
+                // Usando um delay similar ao tempo do timer
+                usleep(UInt32(metronomeSpeed / 10 * 1000000))
             }
         }
     }
-    
+
+    // Função para cancelar a contagem regressiva
+    func cancelCountdown() {
+        countdownCanceled = true
+    }
+
     func reset() {
         isInShow = false
         currentChord = nil
