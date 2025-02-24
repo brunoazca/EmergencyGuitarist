@@ -76,7 +76,8 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         return debugNode
     }()
     
-    var wristPos = CGPointZero
+    var wristPos = CGPoint(x: 100, y: 100)
+    var rightMiddlePos = CGPoint(x: 100, y: 100)
     
     init(size: CGSize, appRouter: AppRouter, gameState: GameState) {
         self.arView = ARSCNView(frame: CGRect(origin: .zero, size: size))
@@ -113,8 +114,6 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         shadableNodes.append(guitarNode.childNode(withName: "Circle_011", recursively: true)!)
         shadableNodes.append(guitarNode.childNode(withName: "Circle_013", recursively: true)!)
         shadableNodes.append(guitarNode.childNode(withName: "Circle_012", recursively: true)!)
-
-
         shadableNodes.append(trastes)
         shadableNodes.append(cordas1)
         shadableNodes.append(cordas2)
@@ -165,8 +164,6 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
 
     }
     
-    
-    
     func setCurrentChord(_ chord: SoundPlayer.Chord){
         currentChord = chord
         
@@ -179,16 +176,16 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         let middlePosition = chordScheme.childNode(withName: "middle", recursively: true)!
         let ringPosition = chordScheme.childNode(withName: "ring", recursively: true)!
         
-        indexSphere.geometry?.materials.first?.diffuse.contents = UIColor(gameState.currentChordColor)
-        middleSphere.geometry?.materials.first?.diffuse.contents = UIColor(gameState.currentChordColor)
-        ringSphere.geometry?.materials.first?.diffuse.contents = UIColor(gameState.currentChordColor)
-        indexSphere.geometry?.materials.first?.emission.contents = UIColor(gameState.currentChordColor)
-        middleSphere.geometry?.materials.first?.emission.contents = UIColor(gameState.currentChordColor)
-        ringSphere.geometry?.materials.first?.emission.contents = UIColor(gameState.currentChordColor)
+        indexSphere.geometry?.materials.first?.diffuse.contents = gameState.currentChordColorForAR
+        middleSphere.geometry?.materials.first?.diffuse.contents = gameState.currentChordColorForAR
+        ringSphere.geometry?.materials.first?.diffuse.contents = gameState.currentChordColorForAR
+        indexSphere.geometry?.materials.first?.emission.contents = gameState.currentChordColorForAR
+        middleSphere.geometry?.materials.first?.emission.contents = gameState.currentChordColorForAR
+        ringSphere.geometry?.materials.first?.emission.contents = gameState.currentChordColorForAR
 
-        indexDebugNode.geometry?.materials.first?.diffuse.contents = UIColor(gameState.currentChordColor)
-        middleDebugNode.geometry?.materials.first?.diffuse.contents = UIColor(gameState.currentChordColor)
-        ringDebugNode.geometry?.materials.first?.diffuse.contents = UIColor(gameState.currentChordColor)
+        indexDebugNode.geometry?.materials.first?.diffuse.contents = gameState.currentChordColorForAR
+        middleDebugNode.geometry?.materials.first?.diffuse.contents = gameState.currentChordColorForAR
+        ringDebugNode.geometry?.materials.first?.diffuse.contents = gameState.currentChordColorForAR
         
         indexSphere.position = SCNVector3(
             x: indexPosition.worldPosition.x - guitarNode.worldPosition.x,
@@ -336,10 +333,12 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
             let wristPoint = try observation.recognizedPoint(.wrist)
             let middleMCP = try observation.recognizedPoint(.middlePIP)
 
-            if wristPoint.confidence > 0.5 { // Confiança mínima
-                wristPos = calculatePositionForShader(fingerPos: middleMCP)
+            if middleMCP.confidence > 0.5 { // Confiança mínima
+                wristPos = calculatePositionForShader(fingerPos: wristPoint)
+                rightMiddlePos = calculatePositionForShader(fingerPos: middleMCP)
+
                 // Converta o ponto normalizado do Vision para coordenadas 2D
-                let wristY = wristPoint.y // Apenas o valor Y para detectar movimentos verticais
+                let wristY = middleMCP.y // Apenas o valor Y para detectar movimentos verticais
                 if let previousY = previousHandY {
                     // Calcule a diferença de Y entre frames
                     let movementDelta = wristY - previousY
@@ -422,6 +421,8 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
                         material.setValue(NSValue(cgPoint: ringDipPosition), forKey: "ringDip")
                         material.setValue(NSValue(cgPoint: ringPipPosition), forKey: "ringPip")
                         material.setValue(NSValue(cgPoint: wristPos), forKey: "wrist")
+                        material.setValue(NSValue(cgPoint: rightMiddlePos), forKey: "middle")
+
 
                     } else {
                         print("No material to shade")
@@ -574,18 +575,18 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
 
         }
         
-        if distance < 0.03 {
-            fingerTarget.geometry?.firstMaterial?.emission.intensity = 10
-            fingerTarget.geometry?.firstMaterial?.selfIllumination.intensity = 10
+        if distance < 0.05 {
 //            fingerTarget.geometry?.firstMaterial?.diffuse.contents = UIColor.green
 //            fingerTarget.geometry?.firstMaterial?.emission.contents = UIColor.green
             fingerTarget.isTouched = true
+            fingerTarget.touchTimer?.cancel()
         } else {
 //            fingerTarget.geometry?.firstMaterial?.diffuse.contents = fingerTarget.color
 //            fingerTarget.geometry?.firstMaterial?.emission.contents = fingerTarget.color
-            fingerTarget.geometry?.firstMaterial?.emission.intensity = 0
-            fingerTarget.geometry?.firstMaterial?.selfIllumination.intensity = 0
-            fingerTarget.isTouched = false
+            if(fingerTarget.isTouched){
+                fingerTarget.setTouchTimer()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4, execute: fingerTarget.touchTimer!)
+            }
         }
         
         if (finger == .index) {
@@ -651,6 +652,8 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         material.setValue(NSValue(cgPoint: CGPointZero), forKey: "ringDip")
         material.setValue(NSValue(cgPoint: CGPointZero), forKey: "ringPip")
         material.setValue(NSValue(cgPoint: CGPointZero), forKey: "wrist")
+        material.setValue(NSValue(cgPoint: CGPointZero), forKey: "middle")
+
     }
     
 let shader = """
@@ -664,6 +667,8 @@ let shader = """
     float2 ringTip;    // Posição do dedo anelar
     float2 ringDip;
     float2 ringPip;
+    
+    float2 middle;
     float2 wrist;
 
     #pragma body
@@ -697,6 +702,8 @@ let shader = """
     float distToRingDownMid = distance(fragPos, ringDownMid);
     
     float distToWrist = distance(fragPos, wrist);
+    float distToMiddle = distance(fragPos, middle);
+
 
     float maxD = 0.23 + 0.1 * (_surface.position.z * _surface.position.z) + 0.29 * (_surface.position.z);
     float maxWristD = 0.33 + 0.1 * (_surface.position.z * _surface.position.z) + 0.29 * (_surface.position.z);
@@ -706,7 +713,7 @@ let shader = """
     // -1.5 -> +- 0.02
     //  0.1x2 + 0.29x + 0.23  
     // Se o fragmento estiver muito próximo de qualquer dedo, torná-lo transparente
-    if (distToIndexTip < maxD || distToIndexDip < maxD || distToIndexPip < maxD || distToIndexMid < maxD || distToIndexDownMid < maxD || distToMiddleTip < maxD || distToMiddleDip < maxD || distToMiddlePip < maxD || distToMiddleMid < maxD || distToMiddleDownMid < maxD || distToRingTip < maxD || distToRingDip < maxD || distToRingPip < maxD || distToRingMid < maxD || distToRingDownMid < maxD || distToWrist < maxWristD) {
+    if (distToIndexTip < maxD || distToIndexDip < maxD || distToIndexPip < maxD || distToIndexMid < maxD || distToIndexDownMid < maxD || distToMiddleTip < maxD || distToMiddleDip < maxD || distToMiddlePip < maxD || distToMiddleMid < maxD || distToMiddleDownMid < maxD || distToRingTip < maxD || distToRingDip < maxD || distToRingPip < maxD || distToRingMid < maxD || distToRingDownMid < maxD || distToWrist < maxWristD || distToMiddle < maxWristD) {
         _output.color.a = 0.0;  // Torna o fragmento transparente
     } else {
         _output.color.a = 1.0;  // Mantém o fragmento visível

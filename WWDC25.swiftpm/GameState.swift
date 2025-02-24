@@ -27,6 +27,20 @@ class GameState: ObservableObject {
             return .clear
         }
     }
+    var currentChordColorForAR: UIColor {
+        switch currentChord {
+        case .A:
+            return UIColor(cgColor: CGColor(red: 0.5, green: 0, blue: 0, alpha: 1))
+        case .C:
+            return UIColor(cgColor: CGColor(red: 0.5, green: 0.5, blue: 0, alpha: 1))
+        case .E:
+            return  UIColor(cgColor: CGColor(red: 0, green: 0.5 ,blue: 0, alpha: 1))
+        case .D:
+            return .blue
+        case nil:
+            return .clear
+        }
+    }
     
     @Published var inChordShape: Bool = false {didSet{
         if (inChordShape && currentMessage.passMethod == .aChord){
@@ -41,8 +55,17 @@ class GameState: ObservableObject {
             if didPlayChord {
                 if currentMessage.passMethod == .playChord ||
                    currentMessage.passMethod == .eChord ||
-                   currentMessage.passMethod == .cChord {
+                    currentMessage.passMethod == .cChord && shouldPlay {
+                    shouldPlay = false
                     startTyping()
+                    switch currentMessage.passMethod {
+                    case .cChord:
+                        currentChord = .C
+                    case .eChord:
+                        currentChord = .E
+                    default:
+                        break
+                    }
                 }
                 if shouldPlay {
                     increaseEffectIntensity()
@@ -123,10 +146,11 @@ class GameState: ObservableObject {
             case .aChord:
                 currentChord = .A
                 showChordIndicator = true
+                shouldPlay = true
             case .cChord:
-                currentChord = .C
+                shouldPlay = true
             case .eChord:
-                currentChord = .E
+                shouldPlay = true
             default:
                 break
             }

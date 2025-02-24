@@ -57,14 +57,20 @@ struct CountdownRing: View {
                 }
         }
         .onAppear {
-            gameState.shouldPlay = false
-            progress = 1.0
             if(gameState.isInShow){
-                duration = 3.75
-                soundPlayer.playSound("WWDC25Song")
+                DispatchQueue.main.asyncAfter(deadline: .now()+4){
+                    gameState.shouldPlay = false
+                    progress = 1.0
+                    duration = 3.75
+                    soundPlayer.playSound("WWDC25Song")
+                    startCountdown()
+                }
+            } else {
+                gameState.shouldPlay = false
+                progress = 1.0
+                startCountdown()
             }
-            startCountdown()
-
+            
         }
     }
 

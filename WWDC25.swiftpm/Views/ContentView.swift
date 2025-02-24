@@ -3,6 +3,9 @@ import SwiftUI
 struct ContentView: View {
     @StateObject var appRouter: AppRouter = AppRouter()
     @StateObject var gameState = GameState()
+    @State private var showAlert = true // Estado para mostrar o alerta
+
+    
     var body: some View {
         ZStack{
             switch appRouter.router {
@@ -19,6 +22,14 @@ struct ContentView: View {
             .onAppear{
                 gameState.appRouter = appRouter
             }
+            .alert("Device Orientation", isPresented: $showAlert) {
+                        Button("OK", role: .cancel) {}
+                    
+                    } message: {
+                        Text("Please rotate your device to Landscape Left for the best experience. The app will not function in any other orientation."
+                             
+            )
+                    }
     }
 }
 
@@ -30,6 +41,6 @@ enum Router{
 }
 
 class AppRouter: ObservableObject {
-    @Published var router: Router = .arView
+    @Published var router: Router = .introScene
 }
 
