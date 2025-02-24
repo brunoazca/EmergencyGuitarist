@@ -54,6 +54,9 @@ struct GuitarView: View{
             
             
             GuitarLabelView(gameState: gameState)
+            if(gameState.showCheck){
+                ConfirmButton(gameState: gameState)
+            }
         }
     }
     func makeARScene(size: CGSize, appRouter: AppRouter, gameState: GameState)->ARSceneViewControllerRepresentable{

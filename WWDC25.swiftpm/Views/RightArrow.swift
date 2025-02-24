@@ -26,7 +26,7 @@ struct RightArrow: View{
                     .padding(.trailing, 100)
                     .padding(.top, isIPad ? 200 : 100)
                     .shadow(radius: 10)
-                    .foregroundStyle(gameState.didPlayChord ? .green : gameState.shouldPlay ? .green : .black)
+                    .foregroundStyle(gameState.didPlayRightChord ? .green : gameState.shouldPlay ? .green : .black)
 
             }
         }

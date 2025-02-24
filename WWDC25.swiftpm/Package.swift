@@ -8,20 +8,20 @@ import PackageDescription
 import AppleProductTypes
 
 let package = Package(
-    name: "WWDC25",
+    name: "Emergency Guitarist",
     platforms: [
         .iOS("16.0")
     ],
     products: [
         .iOSApplication(
-            name: "WWDC25",
+            name: "Emergency Guitarist",
             targets: ["AppModule"],
-            bundleIdentifier: "brunoazca.WWDC25",
+            bundleIdentifier: "brunoazca.EmergencyGuitarist",
             teamIdentifier: "25V85HB523",
             displayVersion: "1.0",
             bundleVersion: "1",
-            appIcon: .placeholder(icon: .carrot),
-            accentColor: .presetColor(.pink),
+            appIcon: .asset("AppIcon"),
+            accentColor: .presetColor(.blue),
             supportedDeviceFamilies: [
                 .pad,
                 .phone
@@ -33,7 +33,7 @@ let package = Package(
                 .portraitUpsideDown(.when(deviceFamilies: [.pad]))
             ],
             capabilities: [
-                .camera(purposeString: "ARKit")
+                .camera(purposeString: "Augmented Reality (ARKit)")
             ]
         )
     ],

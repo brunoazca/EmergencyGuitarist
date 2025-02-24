@@ -57,6 +57,7 @@ struct CountdownRing: View {
                 }
         }
         .onAppear {
+            metronomeTimer?.invalidate()
             if(gameState.isInShow){
                 DispatchQueue.main.asyncAfter(deadline: .now()+4){
                     gameState.shouldPlay = false
@@ -89,7 +90,6 @@ struct CountdownRing: View {
             }
             progressAtualizer += 1
 
-            
             if(progress <= 0) {
                 progress = 1
                 self.gameState.shouldPlay.toggle()

@@ -220,7 +220,7 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
             positionGuitar(frame: frame)
         }
         
-        if frameCounter % 500 == 0 {
+        if frameCounter % 200 == 0 {
             resetARSession()
         }
         currentChord = gameState.currentChord

@@ -48,11 +48,16 @@ class GameState: ObservableObject {
         }
     }}
     
+    @Published var didPlayRightChord: Bool = false
     @Published var didPlayChord: Bool = false {
         didSet {
             previousTask?.cancel() // Cancela qualquer tarefa pendente
 
             if didPlayChord {
+                if shouldPlay {
+                    didPlayRightChord = true
+                    increaseEffectIntensity()
+                }
                 if currentMessage.passMethod == .playChord ||
                    currentMessage.passMethod == .eChord ||
                     currentMessage.passMethod == .cChord && shouldPlay {
@@ -67,10 +72,8 @@ class GameState: ObservableObject {
                         break
                     }
                 }
-                if shouldPlay {
-                    increaseEffectIntensity()
-                }
             } else {
+                didPlayRightChord = false
                 decreaseEffectIntensity()
             }
         }
@@ -101,6 +104,7 @@ class GameState: ObservableObject {
     @Published var showChordIndicator: Bool = false
     @Published var shouldPlay = true
     @Published var showArrow = false
+    @Published var showCheck = false
     
     @Published var typedText = ""
     @Published var showText = true
@@ -148,13 +152,16 @@ class GameState: ObservableObject {
                 currentChord = .A
                 showChordIndicator = true
             case .cChord:
+                showArrow = true
                 shouldPlay = true
             case .eChord:
+                showArrow = true
                 shouldPlay = true
             case .playChord:
                 showArrow = true
                 shouldPlay = true
-
+            case .positionGuitar:
+                showCheck = true
             default:
                 break
             }
@@ -169,12 +176,12 @@ class GameState: ObservableObject {
                     currentChord = .A
                     showChordIndicator = true
                     showMetronome = true
+                    showArrow = true
+
                     if let timer{
                         timer.invalidate()
                     }
 
-                case .positionGuitar:
-                    break
                 case .show:
                     startShow()
                 default:
@@ -189,6 +196,7 @@ class GameState: ObservableObject {
         showText = false
         showChordIndicator = false
         showMetronome = false
+        showArrow = false
         challengeChordSequence = [.A, .C, .E, .E, .A, .C, .E, .E, .E]
         currentChordIndex = 0
         currentChord = .A
@@ -225,11 +233,13 @@ class GameState: ObservableObject {
         showChordIndicator = false
         shouldPlay = true
         showArrow = false
+        showCheck = false
         typedText = ""
         showText = true
         challengeChordSequence = [.A, .C, .E, .A, .C, .E]
         currentChordIndex = 0
         currentMessageIndex = -1
+        currentChord = nil
         currentIndex = 0
         endedTyping = false
         

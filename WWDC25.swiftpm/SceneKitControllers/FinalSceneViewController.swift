@@ -124,6 +124,7 @@ class FinalSceneViewController: UIViewController, SCNPhysicsContactDelegate, SCN
             textBubble.isHidden = false
             textBubbleArrow.isHidden = false
         }
+        
     }
     
     func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
@@ -193,10 +194,14 @@ class FinalSceneViewController: UIViewController, SCNPhysicsContactDelegate, SCN
                         canPlayButton = true
                         playButtonNode.physicsBody?.isAffectedByGravity = false
                         playButtonNode.worldPosition = playButtonStartPos
-                        playButtonStartOrientation = playButtonStartOrientation
+                        playButtonNode.worldOrientation  = playButtonStartOrientation
                         playButtonNode.physicsBody?.velocity = SCNVector3Zero
                         playButtonNode.physicsBody?.angularVelocity = SCNVector4Zero
-
+                        let textNode = playButtonNode.childNode(withName: "playText", recursively: true)!
+                        textNode.position.z -= 0.23
+                        let text = textNode.geometry as! SCNText
+                        text.string = "REPLAY"
+                        
                     } else {
                         messageIndex += 1
                         typedText = ""

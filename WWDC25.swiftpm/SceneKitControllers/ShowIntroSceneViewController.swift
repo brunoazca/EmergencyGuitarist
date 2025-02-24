@@ -95,6 +95,7 @@ class ShowIntroSceneViewController: UIViewController, SCNPhysicsContactDelegate,
                     self.appRouter.router = .arView
                         DispatchQueue.main.asyncAfter(deadline: .now() + 2){
                             self.gameState.showMetronome = true
+                            self.gameState.showArrow = true
                             self.gameState.showChordIndicator = true
                         }
                     }
