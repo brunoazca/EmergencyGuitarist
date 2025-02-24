@@ -21,7 +21,7 @@ struct RightArrow: View{
                 Spacer()
                 Image(systemName: gameState.didPlayChord ? "arrowshape.down.fill" : "arrowshape.down")
                     .resizable()
-                    .opacity(0.5)
+                    .opacity(gameState.didPlayRightChord ? 0.8 : gameState.shouldPlay ? 0.8 : 0.5)
                     .frame(width: isIPad ? 200 : 100, height: isIPad ? 300 : 150)
                     .padding(.trailing, 100)
                     .padding(.top, isIPad ? 200 : 100)

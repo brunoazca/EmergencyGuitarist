@@ -179,7 +179,9 @@ class GameState: ObservableObject {
                     showArrow = true
 
                     if let timer{
-                        timer.invalidate()
+                        if(timer.isValid){
+                            timer.invalidate()
+                        }
                     }
 
                 case .show:

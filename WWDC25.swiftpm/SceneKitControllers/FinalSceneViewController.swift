@@ -20,7 +20,6 @@ class FinalSceneViewController: UIViewController, SCNPhysicsContactDelegate, SCN
     let messages: [String] = ["Oh, WHAT A SHOW!!! We did it! I'm so proud of you!", "I hope you enjoyed this experience and feel motivated to learn more about music and guitar! See you at the next SHOW!"]
     var messageIndex = 0
     var currentIndex = 0 // Índice da letra atual
-    var timer: Timer? // Timer para controlar a
     var getPlayButton = false
     var playButtonStartPos: SCNVector3
     var playButtonStartOrientation: SCNVector4
@@ -59,15 +58,16 @@ class FinalSceneViewController: UIViewController, SCNPhysicsContactDelegate, SCN
         textBubbleArrow = scene.rootNode.childNode(withName: "FinalTextBubbleArrow", recursively: true)!
         titleNode = scene.rootNode.childNode(withName: "title", recursively: true)!
         
-        leftEyebrow = scene.rootNode.childNode(withName: "EyebrowL", recursively: true)!
-        rightEyebrow = scene.rootNode.childNode(withName: "EyebrowR", recursively: true)!
-        ponteBase = scene.rootNode.childNode(withName: "Plane_005", recursively: true)!
-        ponteFrente = scene.rootNode.childNode(withName: "Plane_001", recursively: true)!
+        finalGuitarConteiner = scene.rootNode.childNode(withName: "FinalGuitarConteiner", recursively: true)!
+
+        leftEyebrow = finalGuitarConteiner.childNode(withName: "EyebrowL", recursively: true)!
+        rightEyebrow = finalGuitarConteiner.childNode(withName: "EyebrowR", recursively: true)!
+        ponteBase = finalGuitarConteiner.childNode(withName: "Plane_005", recursively: true)!
+        ponteFrente = finalGuitarConteiner.childNode(withName: "Plane_001", recursively: true)!
         playButtonNode = scene.rootNode.childNode(withName: "PlayButton", recursively: true)!
         floor = scene.rootNode.childNode(withName: "floor", recursively: true)!
         publicNode = scene.rootNode.childNode(withName: "Public", recursively: true)!
         publicSpotLightsNode = scene.rootNode.childNode(withName: "PublicSpotLights", recursively: true)!
-        finalGuitarConteiner = scene.rootNode.childNode(withName: "FinalGuitarConteiner", recursively: true)!
         
         textNode.string = ""
         textNode.font = UIFont(name: "HelveticaNeue", size: 6)!
