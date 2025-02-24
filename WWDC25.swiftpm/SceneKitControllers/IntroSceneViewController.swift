@@ -15,7 +15,7 @@ import SwiftUI
 class IntroSceneViewController: UIViewController, SCNPhysicsContactDelegate, SCNSceneRendererDelegate {
     @ObservedObject var appRouter: AppRouter
     var typedText = ""
-    let messages: [String] = ["Hey! I can't believe you are here! The guitarrist that would play in the show couldn't arrive...", "Could you play with me in the show? I can teach you the basics! Oh, and my name is Violo!"]
+    let messages: [String] = ["Oh! I'm so lucky you're here! The guitarist who was supposed to play in the show couldn't make it...", "Could you play with me in the show? I can teach you the basics! I promise I won't bore you!"]
     var messageIndex = 0
     var currentIndex = 0 // Índice da letra atual
     var timer: Timer? // Timer para controlar a

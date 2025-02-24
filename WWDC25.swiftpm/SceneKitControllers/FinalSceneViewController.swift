@@ -17,7 +17,7 @@ class FinalSceneViewController: UIViewController, SCNPhysicsContactDelegate, SCN
     @ObservedObject var gameState: GameState
     
     var typedText = ""
-    let messages: [String] = ["Oh, WHAT A SHOW!!! We've made it! I'm so proud of you!", "I hope you enjoyed this experience and are motivated in learning more about music and guitar!"]
+    let messages: [String] = ["Oh, WHAT A SHOW!!! We did it! I'm so proud of you!", "I hope you enjoyed this experience and feel motivated to learn more about music and guitar! See you at the next SHOW!"]
     var messageIndex = 0
     var currentIndex = 0 // Índice da letra atual
     var timer: Timer? // Timer para controlar a
