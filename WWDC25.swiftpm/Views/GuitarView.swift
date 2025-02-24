@@ -30,6 +30,9 @@ struct GuitarView: View{
 
             EffectsView(gameState: gameState)
             
+            if(gameState.showArrow) {
+                RightArrow(gameState: gameState)
+            }
             
             VStack{
                 HStack{

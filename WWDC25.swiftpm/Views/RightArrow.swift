@@ -19,12 +19,15 @@ struct RightArrow: View{
         VStack{
             HStack{
                 Spacer()
-                Image(systemName: "arrowshape.down")
+                Image(systemName: gameState.didPlayChord ? "arrowshape.down.fill" : "arrowshape.down")
                     .resizable()
                     .opacity(0.5)
                     .frame(width: isIPad ? 200 : 100, height: isIPad ? 300 : 150)
                     .padding(.trailing, 100)
                     .padding(.top, isIPad ? 200 : 100)
+                    .shadow(radius: 10)
+                    .foregroundStyle(gameState.didPlayChord ? .green : gameState.shouldPlay ? .green : .black)
+
             }
         }
     }

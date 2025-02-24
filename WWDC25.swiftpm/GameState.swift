@@ -100,6 +100,7 @@ class GameState: ObservableObject {
     @Published var showMetronome: Bool = false
     @Published var showChordIndicator: Bool = false
     @Published var shouldPlay = true
+    @Published var showArrow = false
     
     @Published var typedText = ""
     @Published var showText = true
@@ -146,11 +147,14 @@ class GameState: ObservableObject {
             case .aChord:
                 currentChord = .A
                 showChordIndicator = true
-                shouldPlay = true
             case .cChord:
                 shouldPlay = true
             case .eChord:
                 shouldPlay = true
+            case .playChord:
+                showArrow = true
+                shouldPlay = true
+
             default:
                 break
             }
