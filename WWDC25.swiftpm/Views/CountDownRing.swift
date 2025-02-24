@@ -49,7 +49,6 @@ struct CountdownRing: View {
                 }
         }
         .onAppear {
-            gameState.metronomeTimer?.invalidate()
             if(gameState.isInShow){
                 DispatchQueue.main.asyncAfter(deadline: .now()+4){
                     gameState.shouldPlay = false
@@ -66,9 +65,7 @@ struct CountdownRing: View {
             }
             
         }
-        .onDisappear {
-            gameState.metronomeTimer?.invalidate()
-        }
+        
     }
 
 

@@ -130,7 +130,6 @@ class GameState: ObservableObject {
     
     var currentMessageIndex = -1
     private var currentIndex = 0 // Índice da letra atual
-    private var timer: Timer? // Timer para controlar a digitação
     var currentMessage: GuitarMessage {
         if (currentMessageIndex != -1 && currentMessageIndex - 1 <= AppLibrary.Instance.messages.count){
             return AppLibrary.Instance.messages[currentMessageIndex]
@@ -143,9 +142,6 @@ class GameState: ObservableObject {
     }
     var endedTyping = false {didSet{
         if(endedTyping){
-            if let timer{
-                timer.invalidate()
-            }
             let thisCurrentMessage = currentMessage
             switch currentMessage.passMethod {
             case .aChord:
@@ -178,9 +174,7 @@ class GameState: ObservableObject {
                     showMetronome = true
                     showArrow = true
 
-                    if let timer{
-                        timer.invalidate()
-                    }
+                    cancelTyping()
 
                 case .show:
                     startShow()
@@ -202,32 +196,48 @@ class GameState: ObservableObject {
         currentChord = .A
         isInShow = true
     }
-    
+    var typingCanceled = false
+
     func startTyping() {
         typedText = ""
         currentMessageIndex += 1
         currentIndex = 0
         showText = true
         endedTyping = false
+        typingCanceled = false  // Inicializa o flag de cancelamento como false
 
-        // Cria um timer que vai "digitar" o texto aos poucos
-        timer = Timer.scheduledTimer(withTimeInterval: 0.04, repeats: true) { [self] _ in
-            if currentIndex < currentMessageText.count {
-                typedText += String(currentMessageText[currentMessageText.index(currentMessageText.startIndex, offsetBy: currentIndex)])
-                currentIndex += 1
+        // Cria uma tarefa assíncrona para digitar o texto aos poucos
+        DispatchQueue.global(qos: .userInteractive).async { [weak self] in
+            while let self = self, self.currentIndex < self.currentMessageText.count, !self.typingCanceled {
+                DispatchQueue.main.async {
+                    self.typedText += String(self.currentMessageText[self.currentMessageText.index(self.currentMessageText.startIndex, offsetBy: self.currentIndex)])
+                    self.currentIndex += 1
+                }
 
-            } else {
-                if(!endedTyping){
-                    endedTyping = true
+                // Delay para simular a digitação
+                usleep(40000) // 40ms de delay entre cada letra
+            }
+
+            DispatchQueue.main.async {
+                if (self != nil) {
+                    if !self!.endedTyping {
+                        self!.endedTyping = true
+                    }
                 }
             }
         }
     }
+
+    // Função para cancelar a digitação
+    func cancelTyping() {
+        typingCanceled = true
+    }
+
     
     @Published var progress: CGFloat = 1
     @Published var progressAtualizer: Int = 10
     @Published var duration: TimeInterval = 3
-    var metronomeTimer: Timer? = nil
+
     @Published var metronomeSpeed = (0.53*2)
     var countdownCanceled = false
 
@@ -304,12 +314,8 @@ class GameState: ObservableObject {
         
         previousTask?.cancel() // Cancela qualquer tarefa pendente
         previousTask = nil
-        metronomeTimer?.invalidate()
         progressAtualizer = 10
         progress = 1
-        metronomeTimer = nil
-        timer?.invalidate() // Para o timer, se estiver rodando
-        timer = nil
     }
 
 }
