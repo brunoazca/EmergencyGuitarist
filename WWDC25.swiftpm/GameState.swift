@@ -205,28 +205,29 @@ class GameState: ObservableObject {
         showText = true
         endedTyping = false
         typingCanceled = false  // Inicializa o flag de cancelamento como false
-
+        
         // Cria uma tarefa assíncrona para digitar o texto aos poucos
         DispatchQueue.global(qos: .userInteractive).async { [weak self] in
             while let self = self, self.currentIndex < self.currentMessageText.count, !self.typingCanceled {
                 DispatchQueue.main.async {
-                    self.typedText += String(self.currentMessageText[self.currentMessageText.index(self.currentMessageText.startIndex, offsetBy: self.currentIndex)])
-                    self.currentIndex += 1
+                    if self.currentIndex < self.currentMessageText.count {
+                        self.typedText += String(self.currentMessageText[self.currentMessageText.index(self.currentMessageText.startIndex, offsetBy: self.currentIndex)])
+                        self.currentIndex += 1
+                    }
                 }
-
+                
                 // Delay para simular a digitação
                 usleep(40000) // 40ms de delay entre cada letra
             }
-
+            
+            // Usando Optional Chaining para verificar se self e endedTyping não são nulos
             DispatchQueue.main.async {
-                if (self != nil) {
-                    if !self!.endedTyping {
-                        self!.endedTyping = true
-                    }
-                }
+                self?.endedTyping = true
             }
         }
     }
+
+
 
     // Função para cancelar a digitação
     func cancelTyping() {
