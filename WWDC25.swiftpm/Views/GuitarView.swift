@@ -47,8 +47,6 @@ struct GuitarView: View{
             
             
             GuitarLabelView(gameState: gameState)
-        }.onAppear{
-            gameState.appRouter = appRouter
         }
     }
     func makeARScene(size: CGSize, appRouter: AppRouter, gameState: GameState)->ARSceneViewControllerRepresentable{

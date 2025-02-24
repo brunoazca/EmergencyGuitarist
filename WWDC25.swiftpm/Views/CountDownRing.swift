@@ -9,9 +9,12 @@ import SwiftUI
 struct CountdownRing: View {
     @State private var progress: CGFloat = 1.0 // Começa cheio
     @State private var duration: TimeInterval = 3 // Duração da animação
-    @State private var accumulatedInterval: CGFloat = 0
     @ObservedObject var gameState: GameState
+    @State var metronomeTimer: Timer? = nil
+    @State var metronomeSpeed = (0.53*2)
+    @State var progressAtualizer = 10
 
+    
     var isIPad: Bool {
         UIDevice.current.userInterfaceIdiom == .pad
     }
@@ -55,62 +58,55 @@ struct CountdownRing: View {
         }
         .onAppear {
             gameState.shouldPlay = false
-
+            progress = 1.0
+            if(gameState.isInShow){
+                duration = 3.75
+                soundPlayer.playSound("WWDC25Song")
+            }
             startCountdown()
+
         }
     }
 
     func startCountdown() {
         progress = 1.0
-        accumulatedInterval = 0
-        soundPlayer.playSound("Metronome") // Primeira batida
         runCountdown()
     }
 
     func runCountdown() {
-        let step: CGFloat = 0.01 // Pequeno decremento progressivo
-        let interval: TimeInterval = duration * step // Tempo de cada atualização
-
-        DispatchQueue.global(qos: .userInitiated).async { // Rodando em uma thread separada
-            while self.progress > 0 {
-                let startTime = CFAbsoluteTimeGetCurrent() // Marca o tempo inicial
-                
-                DispatchQueue.main.async {
-                    withAnimation(.linear(duration: interval)) {
-                        self.progress -= step
-                    }
-                }
-
-                self.accumulatedInterval += interval
-                if self.accumulatedInterval >= 1 {
-                    self.accumulatedInterval = 0
-                    if !self.gameState.shouldPlay {
-                        self.soundPlayer.playSound("Metronome")
-                    }
-                }
-
-                let elapsedTime = CFAbsoluteTimeGetCurrent() - startTime // Calcula o tempo decorrido
-                let sleepTime = max(0, interval - elapsedTime) // Ajusta para manter precisão
-                
-                usleep(useconds_t(sleepTime * 1_000_000)) // Aguarda sem sobrecarregar a CPU
+       
+        metronomeTimer = Timer.scheduledTimer(withTimeInterval: metronomeSpeed/10, repeats: true) { timer in
+            progress -= (metronomeSpeed/10)/duration
+            
+            if(progressAtualizer % 10 == 0){
+                self.soundPlayer.playSound("Metronome")
             }
+            progressAtualizer += 1
 
-            DispatchQueue.main.async {
+            
+            if(progress <= 0) {
+                progress = 1
                 self.gameState.shouldPlay.toggle()
                 if self.gameState.shouldPlay {
-                    self.duration = 2
+                    if(!gameState.isInShow){
+                        self.duration = 2
+                    } else {
+                        self.duration = 1.25
+                    }
                 } else {
                     gameState.currentChordIndex += 1
                     if gameState.currentChordIndex + 1 <= gameState.challengeChordSequence.count{
                         gameState.currentChord = gameState.challengeChordSequence[gameState.currentChordIndex]
+                    } else {
+                        timer.invalidate()
+                        metronomeTimer?.invalidate()
                     }
                     self.duration = 3
                 }
-                if(gameState.showMetronome){
-                    self.startCountdown()
-                }
             }
         }
+       
+
     }
 
 }

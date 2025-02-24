@@ -16,6 +16,9 @@ struct ContentView: View {
                 FinalView(appRouter: appRouter)
             }
         }.animation(.linear, value: appRouter.router)
+            .onAppear{
+                gameState.appRouter = appRouter
+            }
     }
 }
 

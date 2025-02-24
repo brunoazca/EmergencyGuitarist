@@ -34,33 +34,45 @@ class GameState: ObservableObject {
         }
     }}
     
-    @Published var didPlayChord: Bool = false {didSet{
-        previousTimer?.invalidate()
-        if(didPlayChord) {
-            if(currentMessage.passMethod == .playChord || currentMessage.passMethod == .eChord || currentMessage.passMethod == .cChord){
-                startTyping()
-            }
-            if(shouldPlay){
-                previousTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [self] timer in
-                    if (effectIntensity <= 50){
-                        effectIntensity += 8
-                    } else {
-                        timer.invalidate()
-                    }
+    @Published var didPlayChord: Bool = false {
+        didSet {
+            previousTask?.cancel() // Cancela qualquer tarefa pendente
+
+            if didPlayChord {
+                if currentMessage.passMethod == .playChord ||
+                   currentMessage.passMethod == .eChord ||
+                   currentMessage.passMethod == .cChord {
+                    startTyping()
                 }
-            }
-        } else {
-            previousTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [self] timer in
-                if (effectIntensity >= 30){
-                    effectIntensity -= 8
-                } else {
-                    timer.invalidate()
+                if shouldPlay {
+                    increaseEffectIntensity()
                 }
+            } else {
+                decreaseEffectIntensity()
             }
         }
-    }}
-    var previousTimer: Timer? = nil
-    @Published var effectIntensity: CGFloat = 30
+    }
+
+    var previousTask: Task<Void, Never>? = nil
+    var effectIntensity: CGFloat = 30
+
+    private func increaseEffectIntensity() {
+        previousTask = Task {
+            while effectIntensity <= 50 {
+                effectIntensity += 8
+                try? await Task.sleep(nanoseconds: 100_000_000) // 0.1s
+            }
+        }
+    }
+
+    private func decreaseEffectIntensity() {
+        previousTask = Task {
+            while effectIntensity >= 30 {
+                effectIntensity -= 8
+                try? await Task.sleep(nanoseconds: 100_000_000) // 0.1s
+            }
+        }
+    }
     
     @Published var showMetronome: Bool = false
     @Published var showChordIndicator: Bool = false
@@ -78,10 +90,12 @@ class GameState: ObservableObject {
                 showMetronome = false
                 showChordIndicator = false
             } else {
-                appRouter.router = .finalScene
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3){ [self] in
+                    appRouter.router = .finalScene
+                    showMetronome = false
+                    showChordIndicator = false
+                }
             }
-            showMetronome = false
-            showChordIndicator = false
             
         }
     }}
@@ -134,19 +148,24 @@ class GameState: ObservableObject {
                 case .positionGuitar:
                     break
                 case .show:
-                    appRouter.router = .showIntro
-                    showText = false
-                    showChordIndicator = false
-                    showMetronome = false
-                    challengeChordSequence = [.C, .C, .E, .E]
-                    currentChordIndex = 0
-                    isInShow = true
+                    startShow()
                 default:
                     break
                 }
             }
         }
     }}
+    
+    func startShow(){
+        appRouter.router = .showIntro
+        showText = false
+        showChordIndicator = false
+        showMetronome = false
+        challengeChordSequence = [.A, .C, .E, .E, .A, .C, .E, .E, .E]
+        currentChordIndex = 0
+        currentChord = .A
+        isInShow = true
+    }
     
     func startTyping() {
         typedText = ""
