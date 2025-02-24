@@ -11,8 +11,8 @@ import UIKit
 struct FinalSceneViewControllerRepresentable: UIViewControllerRepresentable{
     let viewController:FinalSceneViewController
     
-    init(size:CGSize, appRouter: AppRouter) {
-        viewController = FinalSceneViewController(size: size, appRouter: appRouter)
+    init(size:CGSize, appRouter: AppRouter, gameState: GameState) {
+        viewController = FinalSceneViewController(size: size, appRouter: appRouter, gameState: gameState)
     }
     
     func makeUIViewController(context: Context) -> FinalSceneViewController {

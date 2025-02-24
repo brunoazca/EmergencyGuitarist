@@ -215,4 +215,29 @@ class GameState: ObservableObject {
             }
         }
     }
+    func reset() {
+        isInShow = false
+        currentChord = nil
+        inChordShape = false
+        didPlayChord = false
+        effectIntensity = 30
+        showMetronome = false
+        showChordIndicator = false
+        shouldPlay = true
+        showArrow = false
+        typedText = ""
+        showText = true
+        challengeChordSequence = [.A, .C, .E, .A, .C, .E]
+        currentChordIndex = 0
+        currentMessageIndex = -1
+        currentIndex = 0
+        endedTyping = false
+        
+        previousTask?.cancel() // Cancela qualquer tarefa pendente
+        previousTask = nil
+        
+        timer?.invalidate() // Para o timer, se estiver rodando
+        timer = nil
+    }
+
 }

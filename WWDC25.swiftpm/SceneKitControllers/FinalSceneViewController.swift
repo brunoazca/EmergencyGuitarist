@@ -14,13 +14,17 @@ import SwiftUI
 
 class FinalSceneViewController: UIViewController, SCNPhysicsContactDelegate, SCNSceneRendererDelegate {
     @ObservedObject var appRouter: AppRouter
+    @ObservedObject var gameState: GameState
+    
     var typedText = ""
     let messages: [String] = ["Oh, WHAT A SHOW!!! We've made it! I'm so proud of you!", "I hope you enjoyed this experience and are motivated in learning more about music and guitar!"]
     var messageIndex = 0
     var currentIndex = 0 // Índice da letra atual
     var timer: Timer? // Timer para controlar a
     var getPlayButton = false
-    
+    var playButtonStartPos: SCNVector3
+    var playButtonStartOrientation: SCNVector4
+    var canPlayButton = false
     var startCamera: SCNNode
     var cameraStartPos: SCNVector3
     var introCamera: SCNNode
@@ -40,10 +44,10 @@ class FinalSceneViewController: UIViewController, SCNPhysicsContactDelegate, SCN
     var floor: SCNNode
     var finalGuitarConteiner: SCNNode
     var cameraInterface: SCNNode
-
+    
     let scnView:SCNView
     
-    init(size: CGSize, appRouter: AppRouter) {
+    init(size: CGSize, appRouter: AppRouter, gameState: GameState) {
         self.scnView = SCNView(frame: CGRect(origin: .zero, size: size))
         
         startCamera = scene.rootNode.childNode(withName: "startCamera", recursively: true)!
@@ -64,7 +68,7 @@ class FinalSceneViewController: UIViewController, SCNPhysicsContactDelegate, SCN
         publicNode = scene.rootNode.childNode(withName: "Public", recursively: true)!
         publicSpotLightsNode = scene.rootNode.childNode(withName: "PublicSpotLights", recursively: true)!
         finalGuitarConteiner = scene.rootNode.childNode(withName: "FinalGuitarConteiner", recursively: true)!
-
+        
         textNode.string = ""
         textNode.font = UIFont(name: "HelveticaNeue", size: 6)!
         
@@ -77,8 +81,12 @@ class FinalSceneViewController: UIViewController, SCNPhysicsContactDelegate, SCN
         finalGuitarConteiner.isHidden = false
         titleNode.isHidden = true
         cameraStartPos = startCamera.position
-        self.appRouter = appRouter
         
+        playButtonStartPos = playButtonNode.worldPosition
+        playButtonStartOrientation = playButtonNode.worldOrientation
+        
+        self.appRouter = appRouter
+        self.gameState = gameState
         super.init(nibName: nil, bundle: nil)
         self.view = self.scnView
         
@@ -108,7 +116,7 @@ class FinalSceneViewController: UIViewController, SCNPhysicsContactDelegate, SCN
         
         playButtonNode.physicsBody?.collisionBitMask = floor.physicsBody!.categoryBitMask | 1
         playButtonNode.physicsBody?.isAffectedByGravity = true
-        playButtonNode.worldPosition = publicNode.worldPosition + SCNVector3(0, 5, 0)
+        playButtonNode.worldPosition = publicNode.worldPosition + SCNVector3(-30, 10, 15)
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [self] in
             startTyping()
@@ -182,7 +190,13 @@ class FinalSceneViewController: UIViewController, SCNPhysicsContactDelegate, SCN
                 // Se a digitação estiver completa, inicia o próximo processo após o atraso de 4 segundos
                 DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [self] in
                     if messageIndex + 1 == messages.count {
-                        //FIM
+                        canPlayButton = true
+                        playButtonNode.physicsBody?.isAffectedByGravity = false
+                        playButtonNode.worldPosition = playButtonStartPos
+                        playButtonStartOrientation = playButtonStartOrientation
+                        playButtonNode.physicsBody?.velocity = SCNVector3Zero
+                        playButtonNode.physicsBody?.angularVelocity = SCNVector4Zero
+
                     } else {
                         messageIndex += 1
                         typedText = ""
@@ -196,7 +210,7 @@ class FinalSceneViewController: UIViewController, SCNPhysicsContactDelegate, SCN
         // Inicia a digitação
         typeNextCharacter()
     }
-
+    
     
     func speakAnimation(){
         rightEyebrow.runAction(eyeBrowAnimation(isRight: true))
@@ -214,7 +228,26 @@ class FinalSceneViewController: UIViewController, SCNPhysicsContactDelegate, SCN
         
         return SCNAction.repeat( (SCNAction.sequence([SCNAction.group([SCNAction.move(by: SCNVector3(x: xOffset, y: yOffset, z: 0), duration: 0.5), SCNAction.rotateBy(x: 0, y: 0, z: zRotation, duration: 0.5)]), SCNAction.group([SCNAction.move(by: SCNVector3(x: -xOffset, y: -yOffset, z: 0), duration: 0.5), SCNAction.rotateBy(x: 0, y: 0, z: -zRotation, duration: 0.5)])])), count: 8)
     }
+    
+    
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let location = touches.first?.location(in: scnView) else {return}
+        
+        if(canPlayButton){
+            if location.y <= scnView.frame.maxY*2/3 &&
+                location.y >= scnView.frame.maxY/2 && location.x >= scnView.frame.width/2 - 90 && location.x <= scnView.frame.width/2 + 90{
+                playButtonNode.physicsBody?.applyForce(SCNVector3(3, 1.4, 0), asImpulse: true)
+                playButtonNode.physicsBody?.collisionBitMask = floor.physicsBody!.categoryBitMask | 1
+                playButtonNode.physicsBody?.isAffectedByGravity = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [self] in
+                    gameState.reset()
+                    appRouter.router = .introScene
+                }
+                
+            }
+        }
+    }
 }
 #Preview {
-    FinalView(appRouter: AppRouter())
+    FinalView(appRouter: AppRouter(), gameState: GameState())
 }

@@ -16,7 +16,7 @@ struct ContentView: View {
             case .showIntro:
                 ShowIntroView(appRouter: appRouter, gameState: gameState)
             case .finalScene:
-                FinalView(appRouter: appRouter)
+                FinalView(appRouter: appRouter, gameState: gameState)
             }
         }.animation(.linear, value: appRouter.router)
             .onAppear{
