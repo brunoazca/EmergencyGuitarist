@@ -76,6 +76,8 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         return debugNode
     }()
     
+    var wristPos = CGPointZero
+    
     init(size: CGSize, appRouter: AppRouter, gameState: GameState) {
         self.arView = ARSCNView(frame: CGRect(origin: .zero, size: size))
         self.appRouter = appRouter
@@ -107,11 +109,16 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         
         shadableNodes.append(guitarNode.childNode(withName: "Cylinder_009", recursively: true)!)
         shadableNodes.append(guitarNode.childNode(withName: "Cylinder_008", recursively: true)!)
+        shadableNodes.append(guitarNode.childNode(withName: "Circle_004", recursively: true)!)
+        shadableNodes.append(guitarNode.childNode(withName: "Circle_011", recursively: true)!)
+        shadableNodes.append(guitarNode.childNode(withName: "Circle_013", recursively: true)!)
+        shadableNodes.append(guitarNode.childNode(withName: "Circle_012", recursively: true)!)
+
+
         shadableNodes.append(trastes)
         shadableNodes.append(cordas1)
         shadableNodes.append(cordas2)
         shadableNodes.append(cordas3)
-
         
         for node in shadableNodes {
             applyShader(to: node)
@@ -327,8 +334,10 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
     func detectRightHand(observation: VNHumanHandPoseObservation){
         do {
             let wristPoint = try observation.recognizedPoint(.wrist)
+            let middleMCP = try observation.recognizedPoint(.middlePIP)
+
             if wristPoint.confidence > 0.5 { // Confiança mínima
-                
+                wristPos = calculatePositionForShader(fingerPos: middleMCP)
                 // Converta o ponto normalizado do Vision para coordenadas 2D
                 let wristY = wristPoint.y // Apenas o valor Y para detectar movimentos verticais
                 if let previousY = previousHandY {
@@ -412,6 +421,8 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
                         material.setValue(NSValue(cgPoint: ringTipPosition), forKey: "ringTip")
                         material.setValue(NSValue(cgPoint: ringDipPosition), forKey: "ringDip")
                         material.setValue(NSValue(cgPoint: ringPipPosition), forKey: "ringPip")
+                        material.setValue(NSValue(cgPoint: wristPos), forKey: "wrist")
+
                     } else {
                         print("No material to shade")
                     }
@@ -639,6 +650,7 @@ class ARSceneViewController: UIViewController, ARSCNViewDelegate, ARSessionDeleg
         material.setValue(NSValue(cgPoint: CGPointZero), forKey: "ringTip")
         material.setValue(NSValue(cgPoint: CGPointZero), forKey: "ringDip")
         material.setValue(NSValue(cgPoint: CGPointZero), forKey: "ringPip")
+        material.setValue(NSValue(cgPoint: CGPointZero), forKey: "wrist")
     }
     
 let shader = """
@@ -652,7 +664,8 @@ let shader = """
     float2 ringTip;    // Posição do dedo anelar
     float2 ringDip;
     float2 ringPip;
-    
+    float2 wrist;
+
     #pragma body
     
     float2 indexMid = (indexTip + indexDip) * 0.5;
@@ -682,13 +695,18 @@ let shader = """
     float distToIndexDownMid = distance(fragPos, indexDownMid);
     float distToMiddleDownMid = distance(fragPos, middleDownMid);
     float distToRingDownMid = distance(fragPos, ringDownMid);
+    
+    float distToWrist = distance(fragPos, wrist);
+
     float maxD = 0.23 + 0.1 * (_surface.position.z * _surface.position.z) + 0.29 * (_surface.position.z);
+    float maxWristD = 0.33 + 0.1 * (_surface.position.z * _surface.position.z) + 0.29 * (_surface.position.z);
+
     // -1 -> +- 0.04
     // -0.9 -> +- 0.05
     // -1.5 -> +- 0.02
     //  0.1x2 + 0.29x + 0.23  
     // Se o fragmento estiver muito próximo de qualquer dedo, torná-lo transparente
-    if (distToIndexTip < maxD || distToIndexDip < maxD || distToIndexPip < maxD || distToIndexMid < maxD || distToIndexDownMid < maxD || distToMiddleTip < maxD || distToMiddleDip < maxD || distToMiddlePip < maxD || distToMiddleMid < maxD || distToMiddleDownMid < maxD || distToRingTip < maxD || distToRingDip < maxD || distToRingPip < maxD || distToRingMid < maxD || distToRingDownMid < maxD) {
+    if (distToIndexTip < maxD || distToIndexDip < maxD || distToIndexPip < maxD || distToIndexMid < maxD || distToIndexDownMid < maxD || distToMiddleTip < maxD || distToMiddleDip < maxD || distToMiddlePip < maxD || distToMiddleMid < maxD || distToMiddleDownMid < maxD || distToRingTip < maxD || distToRingDip < maxD || distToRingPip < maxD || distToRingMid < maxD || distToRingDownMid < maxD || distToWrist < maxWristD) {
         _output.color.a = 0.0;  // Torna o fragmento transparente
     } else {
         _output.color.a = 1.0;  // Mantém o fragmento visível
@@ -699,7 +717,9 @@ let shader = """
     //    }
     
     """
+
 }
+
 
 enum Finger {
     case index

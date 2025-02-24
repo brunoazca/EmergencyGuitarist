@@ -30,6 +30,6 @@ enum Router{
 }
 
 class AppRouter: ObservableObject {
-    @Published var router: Router = .introScene
+    @Published var router: Router = .arView
 }
 
