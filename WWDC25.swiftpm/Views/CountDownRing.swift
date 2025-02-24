@@ -73,6 +73,9 @@ struct CountdownRing: View {
             }
             
         }
+        .onDisappear {
+            metronomeTimer?.invalidate()
+        }
     }
 
     func startCountdown() {

@@ -184,7 +184,7 @@ class FinalSceneViewController: UIViewController, SCNPhysicsContactDelegate, SCN
                 textNode.string = typedText
                 
                 // Chama o próximo caractere após o intervalo de tempo
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.04) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
                     typeNextCharacter()
                 }
             } else {
